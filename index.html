@@ -1,0 +1,2500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>斑马 S3 · 果冻冒险营地</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="果冻营地">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFF7E9">
+<link rel="apple-touch-icon" href="assets/icon/icon180.png">
+<link rel="manifest" href="site.webmanifest">
+<style>
+:root{
+  --cream:#FFF7E9; --cocoa:#6B4630; --cocoa2:#8A6146;
+  --green:#8FD86E; --pink:#FF9BB6; --orange:#FFB44D; --red:#FF7A6B; --yellow:#FFE066;
+  --jelly-shadow:0 10px 0 rgba(150,100,60,.18), 0 18px 32px rgba(120,80,50,.18);
+  --card:rgba(255,252,244,.92);
+  --r:26px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  font-family:"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  color:var(--cocoa); background:#FFE9CF; overflow:hidden;
+  -webkit-user-select:none;user-select:none;
+}
+.stage{position:fixed;inset:0;background-size:cover;background-position:center;transition:background-image .35s;transform:translateZ(0);backface-visibility:hidden}
+.stage::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,240,220,.18),rgba(255,220,190,.30));pointer-events:none}
+.wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(2.4vh + env(safe-area-inset-top)) calc(2.4vw + env(safe-area-inset-right)) calc(2.4vh + env(safe-area-inset-bottom)) calc(2.4vw + env(safe-area-inset-left));gap:1.6vh;z-index:2}
+.panel{background:var(--card);border-radius:var(--r);box-shadow:var(--jelly-shadow);border:2px solid rgba(255,255,255,.9)}
+.h1{font-size:clamp(20px,2.5vw,32px);font-weight:900;letter-spacing:.02em}
+.h2{font-size:clamp(16px,1.7vw,22px);font-weight:800}
+.mut{color:var(--cocoa2);font-weight:600}
+.btn{
+  border:none;cursor:pointer;font-family:inherit;font-weight:900;color:#fff;white-space:nowrap;
+  border-radius:999px;padding:.9em 2.2em;font-size:clamp(16px,1.8vw,22px);
+  background:linear-gradient(180deg,#F9A03F,#E06A0B);
+  text-shadow:0 1px 2px rgba(90,40,0,.35);
+  box-shadow:0 6px 0 #B45401, 0 12px 22px rgba(210,120,40,.28), inset 0 2px 6px rgba(255,255,255,.7);
+  transition:transform .08s, box-shadow .08s;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #D97A22,0 6px 12px rgba(210,120,40,.25),inset 0 2px 6px rgba(255,255,255,.7)}
+.btn.green{background:linear-gradient(180deg,#A7E68C,#6FCE55);box-shadow:0 6px 0 #4CA43A,0 12px 22px rgba(80,170,70,.25),inset 0 2px 6px rgba(255,255,255,.7)}
+.btn.pink{background:linear-gradient(180deg,#FFB6C9,#FF8AA8);box-shadow:0 6px 0 #D9627F,0 12px 22px rgba(220,110,140,.25),inset 0 2px 6px rgba(255,255,255,.7)}
+.btn.ghost{background:rgba(255,255,255,.75);color:var(--cocoa);text-shadow:none;box-shadow:0 4px 0 rgba(150,110,80,.22),inset 0 2px 6px rgba(255,255,255,.9)}
+.btn.danger{background:linear-gradient(180deg,#F26D5B,#CF3B2A);text-shadow:0 1px 2px rgba(80,10,0,.4);box-shadow:0 5px 0 #9E2718,0 10px 20px rgba(200,70,50,.28),inset 0 2px 6px rgba(255,255,255,.35)}
+.dangerZone{margin-top:2vh;padding:1.8vh 1.4vw;border-radius:18px;background:rgba(255,236,232,.9);border:2px dashed #F0A798;display:flex;flex-direction:column;gap:1vh;align-items:flex-start}
+.btn.sm{padding:.55em 1.3em;font-size:clamp(13px,1.35vw,17px)}
+.row{display:flex;gap:1.2vw;align-items:center;justify-content:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:1.2vh;align-items:center}
+.topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:calc(2vh + env(safe-area-inset-top)) calc(2.4vw + env(safe-area-inset-right)) 2vh calc(2.4vw + env(safe-area-inset-left));z-index:3;pointer-events:none}
+.topbar > *{pointer-events:auto}
+/* 本周 3 格进度 + 星星串 */
+.slotRow{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.8);border-radius:999px;padding:.35em .8em;box-shadow:0 4px 12px rgba(130,90,60,.14)}
+.stampSlot{width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#A79379;background:#F1E7D8;border:2px dashed #D8C6AB}
+.stampSlot.on{color:#2F5E1E;background:linear-gradient(180deg,#D9F7C4,#9BE07C);border:2px solid #74C255;box-shadow:0 3px 8px rgba(90,170,60,.25);animation:slotIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes slotIn{from{transform:scale(.6)}to{transform:scale(1)}}
+.starStr{display:flex;gap:4px;align-items:center;background:rgba(255,255,255,.8);border-radius:999px;padding:.35em .8em;box-shadow:0 4px 12px rgba(130,90,60,.14)}
+.starMini{width:18px;height:18px;background:radial-gradient(circle at 38% 30%,#FFE7A8,#FFC24D 40%,#F08A2B 78%);clip-path:polygon(50% 2%,61% 35%,95% 35%,68% 56%,78% 90%,50% 70%,22% 90%,32% 56%,5% 35%,39% 35%)}
+.chip{background:rgba(255,255,255,.86);border-radius:999px;padding:.5em 1.1em;font-weight:800;font-size:clamp(13px,1.4vw,17px);box-shadow:0 4px 12px rgba(130,90,60,.16);display:flex;align-items:center;gap:.5em}
+.dot{width:.65em;height:.65em;border-radius:50%;display:inline-block}
+/* ===== 今日营地 P01 ===== */
+.campGrid{display:grid;grid-template-columns:1.2fr .8fr;gap:1.6vw;width:min(1180px,92vw);max-height:74vh}
+.dueCard{display:flex;flex-direction:column;gap:1.2vh;padding:2.2vh 2vw;position:relative;overflow:hidden}
+.bigNum{font-size:clamp(28px,4vw,52px);font-weight:900;line-height:1.05}
+.stepRow{display:flex;gap:.9vw}
+.stepLine{width:100%;padding:1.3vh 1vw;border-radius:14px;background:rgba(255,247,233,.9);color:#8A6A4A;font-weight:700;font-size:clamp(13px,1.4vw,16px);line-height:1.5}
+.stepLine b{color:#E4761B;font-size:1.25em}
+.step{flex:1;height:clamp(38px,5vh,58px);border-radius:16px;background:linear-gradient(180deg,#F3E7D4,#E7D6BE);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:clamp(13px,1.4vw,18px);color:#A98B6C;box-shadow:inset 0 -4px 0 rgba(160,130,100,.25)}
+.step.on{background:linear-gradient(180deg,#FFE28D,#FFC24D);color:#7A4B12;box-shadow:inset 0 -4px 0 rgba(200,140,40,.4),0 4px 12px rgba(255,190,80,.45)}
+.step.done{background:linear-gradient(180deg,#BEE8B8,#8FD989);color:#245A24;box-shadow:inset 0 -4px 0 rgba(90,150,80,.35)}
+.step{flex-direction:column;gap:2px;line-height:1.15}
+.step .mut{font-size:clamp(10px,.95vw,12px);font-weight:700;opacity:.85}
+.miniCard{display:flex;align-items:center;gap:1vw;padding:1.4vh 1.2vw;border-radius:20px;background:rgba(255,255,255,.7);box-shadow:0 6px 16px rgba(140,100,70,.12)}
+.thumb{width:clamp(52px,6vw,78px);height:clamp(52px,6vw,78px);border-radius:16px;background:#FFFBF2 center/contain no-repeat;flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.9),0 4px 10px rgba(140,100,70,.14)}
+.duck{width:clamp(76px,8.6vw,120px);position:absolute;right:-4px;top:-6px;filter:drop-shadow(0 8px 14px rgba(170,120,80,.3));pointer-events:none}
+.dueCard{padding-right:clamp(96px,10.4vw,138px)}
+/* ===== 路线 P02 ===== */
+.routeWrap{width:min(1180px,94vw);max-height:78vh;display:flex;flex-direction:column;gap:1.6vh}
+.unitStrip{display:flex;gap:.7vw;overflow-x:auto;padding-bottom:.6vh;flex-shrink:0;width:100%;min-width:0}
+/* 路线页表头：日期一行、复习/总结/加练另起一行小字，窄屏也不挤成一坨 */
+.dayHd{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;line-height:1.15;white-space:nowrap}
+.dayHd b{font-weight:900;font-size:clamp(12px,1.35vw,17px);color:var(--cocoa)}
+.dayHd i{font-style:normal;font-weight:700;font-size:clamp(10px,1.05vw,13px);color:#C07A3A}
+.uChip{flex:0 0 auto;padding:.55em 1em;border-radius:14px;background:rgba(255,255,255,.8);font-weight:800;font-size:clamp(12px,1.3vw,16px);box-shadow:0 4px 10px rgba(140,100,70,.12);cursor:pointer;border:2px solid transparent}
+.uChip.sel{border-color:#FFB44D;background:#FFF3DC}
+.uChip.done{background:linear-gradient(180deg,#DFF6D3,#BEEAA9)}
+.weekGrid{display:grid;grid-template-columns:minmax(72px,auto) repeat(6,minmax(0,1fr));gap:1.1vh 1vw;align-items:center;padding:2vh 1.6vw;border-radius:24px;background:rgba(255,255,255,.86);box-shadow:0 10px 28px rgba(140,100,70,.16);width:min(800px,92vw)}
+.node{aspect-ratio:1/1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:clamp(13px,1.7vw,22px);background:radial-gradient(circle at 30% 25%,#FFD98A,#F0A83C);box-shadow:0 4px 0 rgba(190,120,40,.45),inset 0 2px 6px rgba(255,255,255,.6);cursor:pointer;position:relative}
+.node.lock{background:radial-gradient(circle at 30% 25%,#EBE3D6,#D3C6B2);color:#9C8B76;cursor:not-allowed;box-shadow:0 4px 0 rgba(160,140,120,.3)}
+.node.boss{background:radial-gradient(circle at 30% 25%,#FFC0D2,#F0709A)}
+.node .st{position:absolute;bottom:-14px;font-size:10px;color:#FFB400;text-shadow:0 1px 0 #fff}
+/* ===== 答题 P03 ===== */
+.quizBar{width:min(1100px,94vw);display:flex;align-items:center;gap:1vw}
+.prog{flex:1;height:14px;border-radius:999px;background:rgba(255,255,255,.55);overflow:hidden;box-shadow:inset 0 2px 6px rgba(150,110,80,.2)}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#FFD166,#FF9E3D);border-radius:999px;transition:width .3s}
+.qCard{width:min(1100px,94vw);max-height:62vh;padding:2.4vh 2vw;display:flex;flex-direction:column;align-items:center;gap:2vh}
+.quizWrap .qCard{margin-top:auto;margin-bottom:auto}
+.qImg{width:clamp(160px,22vh,260px);height:clamp(160px,22vh,260px);border-radius:24px;background:#FFFEF9 center/contain no-repeat;box-shadow:inset 0 0 0 3px #fff,0 10px 26px rgba(140,100,70,.18)}
+.optGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1vw;width:100%}
+.opt{padding:1.6vh 1vw;border-radius:18px;background:rgba(255,255,255,.9);font-weight:900;font-size:clamp(16px,2vw,26px);text-align:center;cursor:pointer;box-shadow:0 5px 0 rgba(160,120,80,.22),inset 0 2px 6px rgba(255,255,255,.9);transition:transform .08s}
+.opt:active{transform:translateY(3px)}
+/* 答对时果冻弹一下（纯 CSS，不引库） */
+.opt.ok{animation:optPop .38s cubic-bezier(.34,1.56,.64,1)}
+@keyframes optPop{0%{transform:scale(1)}45%{transform:scale(1.1)}75%{transform:scale(.95)}100%{transform:scale(1)}}
+.opt.ok{background:linear-gradient(180deg,#C6F3B0,#8ED96E);box-shadow:0 5px 0 #5FAF45}
+.opt.no{background:linear-gradient(180deg,#FFD3C7,#FF9E8C);box-shadow:0 5px 0 #D46A56}
+/* 不只靠颜色：对/错各带符号，红绿色弱也能分辨 */
+.opt.ok::after{content:"✓";margin-left:.35em;font-size:1.1em;color:#2F5E1E}
+.opt.no::after{content:"✗";margin-left:.35em;font-size:1.1em;color:#8A2A18}
+.optImg{padding:.4vh;display:flex;align-items:center;justify-content:center}
+.optImg .qImg{width:clamp(90px,13vh,150px);height:clamp(90px,13vh,150px);box-shadow:inset 0 0 0 2px #fff,0 4px 10px rgba(140,100,70,.14)}
+.badge{font-size:clamp(30px,5vw,64px);font-weight:900;letter-spacing:.06em;color:#fff;background:linear-gradient(180deg,#FFD166,#F2A03D);padding:.1em .5em;border-radius:16px;box-shadow:0 6px 0 #C97C22,inset 0 3px 8px rgba(255,255,255,.6)}
+.sayRow{display:flex;gap:1.4vw;width:100%;justify-content:center}
+.sayBtn{flex:1;max-width:280px;padding:1.6vh 1vw;border-radius:18px;font-weight:900;font-size:clamp(14px,1.7vw,20px);cursor:pointer;text-align:center;box-shadow:0 5px 0 rgba(160,120,80,.25),inset 0 2px 6px rgba(255,255,255,.9)}
+.sayBtn.g{background:linear-gradient(180deg,#C6F3B0,#8ED96E);color:#2F5E1E}
+.sayBtn.y{background:linear-gradient(180deg,#FFE9A8,#FFD166);color:#7A5410}
+.sayBtn.r{background:linear-gradient(180deg,#FFD3C7,#FF9E8C);color:#7A2E1E}
+.sayBtn:active{transform:translateY(3px)}
+/* ===== 结算 P04 ===== */
+.resWrap{width:min(980px,92vw);padding:3vh 2.4vw;display:flex;flex-direction:column;align-items:center;gap:2vh;max-height:90vh;overflow-y:auto}
+.starRow{display:flex;gap:2vw}
+.starBig{width:clamp(64px,11vh,110px);height:clamp(64px,11vh,110px);background:radial-gradient(circle at 38% 30%,#FFE7A8 0%,#FFC24D 38%,#F08A2B 72%,#D96A18 100%);filter:drop-shadow(0 8px 16px rgba(200,140,40,.3));clip-path:polygon(50% 2%,61% 35%,95% 35%,68% 56%,78% 90%,50% 70%,22% 90%,32% 56%,5% 35%,39% 35%)}
+.starBig.off{background:linear-gradient(180deg,#E6DCCB,#CFC3AE);filter:none;opacity:.45}
+/* 星星逐颗弹出 */
+.starBig.pop{animation:starPop .45s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes starPop{0%{transform:scale(0) rotate(-18deg);opacity:0}65%{transform:scale(1.15) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+/* 鸭子跳一下 */
+.duckJump{animation:duckJump .55s ease-out 2}
+@keyframes duckJump{0%,100%{transform:translateY(0)}40%{transform:translateY(-14px) rotate(-6deg)}70%{transform:translateY(-4px) rotate(4deg)}}
+/* 家长数据折叠层 */
+.resParent{display:none;flex-direction:column;gap:1.2vh;width:100%;align-items:center}
+.resStats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;width:100%}
+.stat{padding:1.6vh 1vw;border-radius:18px;background:rgba(255,255,255,.85);text-align:center;box-shadow:0 5px 14px rgba(140,100,70,.12)}
+.stat b{display:block;font-size:clamp(20px,2.6vw,34px);font-weight:900}
+.stat span{font-size:clamp(12px,1.3vw,15px);color:var(--cocoa2);font-weight:700}
+.wrongRow{display:flex;gap:.8vw;flex-wrap:wrap;justify-content:center}
+/* ===== 词卡 P09 ===== */
+.cardsWrap{width:min(1240px,95vw);max-height:76vh;display:flex;flex-direction:column;gap:1.4vh}
+.cardGrid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:.7vw;width:100%;max-height:64vh;overflow-y:auto;padding:.6vh .4vw}
+.wc{aspect-ratio:1/1;border-radius:14px;background:#FFFFFF center/contain no-repeat;position:relative;box-shadow:0 5px 14px rgba(135,95,60,.16);border:2px solid #FFF8EC}
+.wc.gray{filter:saturate(.72)}
+.wc.half{filter:saturate(.9)}
+.wc.full{box-shadow:0 4px 10px rgba(140,100,70,.14),inset 0 0 0 3px rgba(143,216,110,.55)}
+.wc.gold{box-shadow:0 4px 12px rgba(200,150,40,.3),inset 0 0 0 3px rgba(255,196,60,.85)}
+/* 掌握度角标：不靠图片本身饱和度区分（很多教材图本来就是灰白线稿） */
+.wc .mast{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 5px rgba(120,90,60,.25)}
+.wc.gray .mast{background:#B9AFA0}
+.wc.half .mast{background:#FFC24D}
+.wc.full .mast{background:#7FCE5B}
+.wc.gold .mast{background:#FFB300}
+/* 升档仪式：放大回弹 + 一道流光 */
+.wc.justUp{animation:cardUp .6s cubic-bezier(.34,1.56,.64,1)}
+.wc.justUp::after{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.85) 50%,transparent 70%);animation:shine .8s ease-out;pointer-events:none}
+@keyframes cardUp{0%{transform:scale(.85)}55%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shine{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+/* 低饱和/线稿图的暖色补光，别让它在暖底上像“没加载出来” */
+.wc.lowink{background-color:#FFF6E9}
+.wc.lowink::before{content:"";position:absolute;inset:0;border-radius:12px;box-shadow:inset 0 0 0 2px rgba(255,190,120,.55);pointer-events:none}
+.wc i{position:absolute;bottom:2px;right:4px;font-size:9px;color:#B98F63;font-style:normal;font-weight:800}
+/* ===== 勾选复习 ===== */
+.drillGrid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:.6vw;width:100%;padding:.4vh 0}
+.drillCell{cursor:pointer;border:2px solid #fff}
+.drillCell i{bottom:auto;top:2px;left:4px;right:auto;font-size:9px;color:#6B5334;background:rgba(255,253,246,.82);padding:0 3px;border-radius:6px;max-width:92%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drillCell .tick{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.6vh;color:#fff;background:rgba(143,216,110,.86);border-radius:12px;opacity:0;transition:.16s}
+.drillCell.on .tick{opacity:1}
+.drillCell.on{border-color:#8FD86E;box-shadow:0 0 0 3px rgba(143,216,110,.5)}
+.drillCell.gray,.drillCell.half{filter:none}
+.drillCell.gray{opacity:.72}
+/* 认词小站 */
+.sightBox{width:min(960px,92vw);display:flex;flex-direction:column;align-items:center;gap:1.6vh;padding:1vh 0}
+.sightGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.4vw;width:100%;max-width:900px}
+.sightCard{background:#FFFDF6;border:4px solid #fff;border-radius:22px;box-shadow:var(--jelly-shadow);
+  display:flex;align-items:center;justify-content:center;min-height:16vh;cursor:pointer;
+  font-weight:900;font-size:clamp(30px,4.6vw,60px);color:#6B4630;letter-spacing:.02em;transition:.16s}
+.sightCard:active{transform:scale(.97)}
+.sightCard.ok{background:#EAFBE0;border-color:#8FD86E;color:#3E7A2A}
+.sightCard.no{background:#FFECEA;border-color:#FF7A6B;color:#B4402F}
+/* 实测记录表 */
+.measTbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}.measTbl th,.measTbl td{padding:6px 8px;border-bottom:1px solid #EFE2CC;text-align:left}
+.measTbl th{color:#8A6A45;font-weight:800;font-size:12px}
+.measTbl td b{color:#5C4327}
+/* ===== 句型 P10 ===== */
+.paper{width:min(1020px,92vw);background:#FFFDF4;border-radius:18px;padding:4vh 3vw;box-shadow:0 12px 30px rgba(140,100,70,.2),inset 0 0 0 2px #FFF;position:relative;display:flex;flex-direction:column;gap:1.4vh}
+.paper::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;border-radius:18px 18px 0 0;background:repeating-linear-gradient(90deg,#FFC7D6 0 22px,#FFE29A 22px 44px,#BEEAA9 44px 66px,#A9D6FF 66px 88px)}
+.sentLine{font-size:clamp(26px,4.3vw,54px);font-weight:900;line-height:1.6;letter-spacing:.01em;display:flex;flex-wrap:wrap;gap:.28em;justify-content:center}
+.w{transition:.16s;border-radius:10px;padding:0 .12em}
+.w.hot{background:linear-gradient(180deg,#FFE066,#FFC24D);transform:scale(1.06);box-shadow:0 4px 0 rgba(200,150,40,.4)}
+.w.done{color:#B99A7A}
+.hintRow{display:flex;justify-content:center;gap:.6vw;margin-top:2vh;flex-wrap:wrap}
+.tag{padding:.4em 1em;border-radius:999px;background:rgba(255,255,255,.8);font-weight:800;font-size:clamp(12px,1.3vw,16px);cursor:pointer;box-shadow:0 3px 10px rgba(140,100,70,.14)}
+.tag.on{background:linear-gradient(180deg,#FFD166,#FFB44D);color:#fff}
+/* 句型回声：空格要看得见、换词卡要大 */
+.sentLine .w.blank{color:#D08A2A;background:#FFF7DE;border:2px dashed #E8AE55;border-radius:12px;padding:0 .3em;min-width:1.5em;text-align:center}
+.modeTip{display:none}
+/* 新手指引（只在第一次打开出现） */
+.tourMask{position:fixed;inset:0;background:rgba(60,40,30,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:3vh 3vw}
+.tourCard{width:min(720px,96vw);max-height:88vh;overflow-y:auto;background:#FFFDF4;border-radius:22px;padding:3.4vh 3vw;box-shadow:0 18px 44px rgba(80,50,30,.28);display:flex;flex-direction:column;gap:1.4vh}
+.tourRow{display:flex;flex-direction:column;gap:.3vh;text-align:left}
+.tourT{font-weight:900;font-size:clamp(15px,1.7vw,20px);color:#7A4E2E}
+.tourD{font-size:clamp(13px,1.45vw,17px);line-height:1.55;color:#6E5A48}
+.wordPick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.4vh 1vw;width:100%;max-width:680px;margin:0 auto}
+.pickWord{font-weight:900;font-size:clamp(18px,2.1vw,27px);text-align:center;padding:1.4vh .4vw;border-radius:16px;background:#fff;cursor:pointer;box-shadow:0 5px 0 rgba(160,120,80,.22),inset 0 2px 6px rgba(255,255,255,.9)}
+.pickWord:active{transform:translateY(3px)}
+/* ===== 家长周报 P06 ===== */
+.rpWrap{width:min(1080px,94vw);max-height:84vh;display:flex;flex-direction:column;gap:1.4vh;overflow-y:auto;padding:3vh 3vw 10vh;border-radius:var(--r);scrollbar-width:none}
+.rpWrap::-webkit-scrollbar{display:none}
+.rpCard{padding:2vh 1.8vw;border-radius:20px;background:rgba(255,255,255,.9);box-shadow:0 8px 20px rgba(140,100,70,.12)}
+.rpWrap .rpCard{padding:1.7vh 1.6vw}
+.rpWrap{gap:1.1vh}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.6vh 1vw;font-size:clamp(13px,1.4vw,17px)}
+.kv b{font-weight:900}
+/* ===== 预习 P08 ===== */
+.pvCard{width:min(900px,90vw);padding:3vh 2vw;display:flex;flex-direction:column;align-items:center;gap:2vh}
+.pvImg{width:clamp(200px,34vh,340px);height:clamp(200px,34vh,340px);border-radius:26px;background:#FFFEF9 center/contain no-repeat;box-shadow:inset 0 0 0 4px #fff,0 12px 30px rgba(140,100,70,.2)}
+.timer{font-weight:900;color:#D9724F;font-size:clamp(15px,1.8vw,20px)}
+/* ===== 通用浮层 ===== */
+.mask{position:fixed;inset:0;background:rgba(90,60,40,.36);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:20}
+.modal{width:min(680px,88vw);padding:3vh 2.4vw;border-radius:24px;background:var(--cream);box-shadow:0 20px 50px rgba(80,50,30,.3);display:flex;flex-direction:column;gap:1.6vh;align-items:center;text-align:center}
+.sugar{position:fixed;width:18px;height:18px;border-radius:50%;pointer-events:none;z-index:30;background:radial-gradient(circle at 35% 30%,#fff,#FFB44D)}
+/* 连击提示 */
+.combo{position:fixed;left:50%;top:24%;z-index:92;padding:.45em 1.2em;border-radius:999px;background:linear-gradient(180deg,#FFD166,#FF8A3D);color:#fff;font-weight:900;font-size:clamp(20px,3vw,38px);text-shadow:0 2px 4px rgba(140,60,0,.35);box-shadow:0 12px 28px rgba(220,120,40,.35);pointer-events:none;animation:comboIn .9s ease-out forwards}
+@keyframes comboIn{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}25%{opacity:1;transform:translate(-50%,0) scale(1.08)}70%{opacity:1;transform:translate(-50%,-6px) scale(1)}100%{opacity:0;transform:translate(-50%,-28px) scale(.95)}}
+.hidden{display:none!important}
+.foot{position:fixed;left:50%;right:auto;transform:translateX(-50%);bottom:calc(1.6vh + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:.7vw;z-index:6;max-width:94vw;padding:.9vh 1.6vw;border-radius:999px;background:rgba(255,250,242,.93);box-shadow:0 8px 22px rgba(120,85,55,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.footBtn{background:rgba(255,255,255,.8);border-radius:999px;padding:.5em 1.1em;font-weight:800;font-size:clamp(12px,1.25vw,15px);box-shadow:0 4px 12px rgba(140,100,70,.16);cursor:pointer;border:none;font-family:inherit;color:var(--cocoa);white-space:nowrap}
+.footBtn.on{background:linear-gradient(180deg,#FFD166,#FFB44D);color:#fff}
+/* ===== 撤销提示条 ===== */
+.undoToast{position:fixed;left:50%;transform:translateX(-50%);bottom:12vh;z-index:88;display:flex;align-items:center;gap:.9em;padding:.7em 1.1em;border-radius:999px;background:rgba(255,255,255,.96);box-shadow:0 10px 26px rgba(120,85,55,.22);font-weight:800;font-size:clamp(13px,1.4vw,17px);color:var(--cocoa);animation:undoIn .18s ease-out}
+.undoBtn{border:none;font-family:inherit;font-weight:900;font-size:inherit;padding:.35em .9em;border-radius:999px;background:linear-gradient(180deg,#FFD166,#FFB44D);color:#7A4B12;cursor:pointer}
+@keyframes undoIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+/* ===== 小屏适配（手机竖屏 / 窄窗口）===== */
+@media (max-width:760px){
+  /* 关键：手机上内容经常比一屏高。原来 .wrap 是居中 + body 禁止滚动，
+     超出部分被裁掉、上下互相压住，看着就是“文字和图叠在一起”。
+     手机档改成从顶部排 + 整页可滚动，并给顶栏/底栏留出安全区。 */
+  .wrap{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding-top:calc(12vh + env(safe-area-inset-top));
+    padding-bottom:calc(14vh + env(safe-area-inset-bottom))}
+  /* 面板原来按内容撑宽，标题一长就超出屏幕、右侧被裁掉 */
+  .panel{max-width:94vw;min-width:0;overflow-x:hidden}
+  .h1{font-size:clamp(17px,4.8vw,24px);line-height:1.25;overflow-wrap:anywhere}
+  .h2{font-size:clamp(15px,4.2vw,20px);overflow-wrap:anywhere}
+  .mut,.chip{overflow-wrap:anywhere}
+  .topbar{flex-wrap:wrap;gap:6px;align-items:flex-start}
+  .topbar .h2{font-size:clamp(15px,4.4vw,20px)}
+  .starStr,.slotRow{padding:.28em .6em}
+  .starMini{width:14px;height:14px}
+  .campGrid{grid-template-columns:1fr;width:94vw;max-height:none}
+  .optGrid{grid-template-columns:repeat(2,1fr)}
+  .cardGrid{grid-template-columns:repeat(4,minmax(0,1fr));max-height:none;overflow:visible;flex-shrink:0}
+  .drillGrid{grid-template-columns:repeat(4,minmax(0,1fr));max-height:44vh;overflow-y:auto;flex-shrink:0}
+  .sayRow{flex-wrap:wrap}
+  .sayBtn{min-height:52px;font-size:clamp(15px,4.2vw,18px)}
+  .rpWrap{width:94vw;max-height:none;padding:2.6vh 4vw;overflow:visible;flex-shrink:0}
+  .resWrap{max-height:none;overflow:visible;flex-shrink:0}
+  .stepRow{flex-wrap:wrap}
+  .foot{flex-wrap:nowrap;gap:1.2vw;padding:.9vh 2vw}
+  .foot .footBtn{flex:0 0 auto;padding:.5em .8em;font-size:clamp(12px,3.2vw,15px)}
+  .duck.campDuck{display:none}
+  .jellyGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1vh 2vw;max-height:none}
+  .qCard{max-height:none}
+  .qImg{width:clamp(140px,34vw,200px);height:clamp(140px,34vw,200px)}
+  .duck{width:clamp(46px,13vw,62px);right:2px;top:-10px}
+  .tag{font-size:13.5px;padding:.55em 1.1em}
+  .row{flex-wrap:wrap;justify-content:center}
+  .chip{max-width:100%}
+  /* 12 个单元小方块在手机上原本横向溢出、左边 U1/U2 被切掉，改为换行 */
+  .unitStrip{flex-wrap:wrap;justify-content:center;width:100%;flex-shrink:0;overflow:visible;gap:2vw 1.6vw}
+  .uChip{padding:.5em .8em;font-size:13px}
+}
+/* 窄手机（≤430px）：4 列词卡挤到 ~80px，图看不清，降到 3 列 */
+@media (max-width:430px){
+  .cardGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .wordPick{grid-template-columns:repeat(2,minmax(0,1fr));gap:1vh 2.4vw}
+  .pickWord{font-size:clamp(17px,4.8vw,23px);padding:1.2vh .3vw;overflow-wrap:anywhere}
+  .tourMask{padding:2vh 3vw}
+  .tourCard{padding:2.6vh 4vw;max-height:92vh}
+  .drillGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .h1{font-size:clamp(16px,5.2vw,20px)}
+  .btn{padding:.8em 1.5em;font-size:clamp(15px,4.4vw,18px)}
+  .chip{font-size:clamp(12px,3.6vw,15px)}
+}
+/* 中间档：平板竖屏 / 小窗口，9 列会小到点不准，降到 6 列 */
+@media (min-width:761px) and (max-width:1180px){
+  .cardGrid{grid-template-columns:repeat(6,minmax(0,1fr));max-height:none;overflow:visible;flex-shrink:0}
+  .drillGrid{grid-template-columns:repeat(6,minmax(0,1fr));max-height:48vh;overflow-y:auto;flex-shrink:0}
+  .jellyGrid{grid-template-columns:repeat(5,minmax(0,1fr))}
+  /* 平板竖屏内容比一屏高时也会被居中裁掉，这里同样允许整页滚动 */
+  .wrap{overflow-y:auto;justify-content:flex-start;padding-top:calc(8vh + env(safe-area-inset-top));padding-bottom:calc(12vh + env(safe-area-inset-bottom))}
+  .panel{max-width:94vw;min-width:0}
+}
+@media (max-height:520px){
+  .cardGrid{max-height:48vh}
+  .panel{padding:2vh 3vw}
+}
+/* ===== 营火（5 级） ===== */
+.firePanel{display:flex;flex-direction:column;gap:6px}
+.campfire{width:94px;height:94px;object-fit:contain;transition:transform .3s;transform-origin:50% 90%;filter:drop-shadow(0 4px 8px rgba(150,90,40,.25))}
+.campfire.lv1{transform:scale(.66)}
+.campfire.lv2{transform:scale(.78)}
+.campfire.lv3{transform:scale(.9)}
+.campfire.lv4{transform:scale(1)}
+.campfire.lv5{transform:scale(1.12);filter:drop-shadow(0 0 14px rgba(255,180,90,.7))}
+.fireWrap{position:relative;height:104px;margin-top:4px;display:flex;align-items:flex-end;justify-content:center}
+.logs{position:absolute;bottom:2px;width:64px;height:14px;border-radius:8px;background:linear-gradient(180deg,#C8925E,#8C5A32);box-shadow:0 3px 6px rgba(90,60,30,.25)}
+.fire{position:relative;bottom:8px;width:34px;height:34px;border-radius:50% 50% 46% 46%/60% 60% 40% 40%;background:radial-gradient(circle at 50% 78%,#FFF3B0 0%,#FFC94D 34%,#FF8A2B 66%,#E0561B 100%);filter:drop-shadow(0 0 6px rgba(255,160,60,.55));animation:flicker 1.6s ease-in-out infinite}
+.fire.lv1{width:26px;height:26px;opacity:.75}
+.fire.lv2{width:32px;height:32px;opacity:.85}
+.fire.lv3{width:38px;height:38px}
+.fire.lv4{width:44px;height:44px;box-shadow:0 0 14px rgba(255,190,90,.65)}
+.fire.lv5{width:50px;height:50px;box-shadow:0 0 22px rgba(255,205,110,.85);background:radial-gradient(circle at 50% 78%,#FFFFFF 0%,#FFE98A 26%,#FFB93D 56%,#FF6A18 100%)}
+@keyframes flicker{0%,100%{transform:scaleY(1) translateX(0)}35%{transform:scaleY(1.1) translateX(-1px)}70%{transform:scaleY(.94) translateX(1px)}}
+/* ===== 果冻图鉴 ===== */
+.jellyGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1.2vh 1vw;width:min(92vw,900px);max-height:64vh;overflow-y:auto;padding:1vh 0}
+.jellyCell{display:flex;flex-direction:column;align-items:center;gap:4px;padding:.8vh .4vw;border-radius:14px;background:rgba(255,255,255,.55)}
+.jellyBlob{width:clamp(44px,5vw,64px);height:clamp(44px,5vw,64px);border-radius:48% 52% 58% 42%/52% 46% 54% 48%;background:var(--jc);background-image:radial-gradient(circle at 34% 28%,rgba(255,255,255,.85) 0%,var(--jc) 55%,rgba(120,85,55,.35) 100%);box-shadow:inset 0 -6px 10px rgba(0,0,0,.12),0 6px 14px rgba(140,100,70,.18);display:flex;align-items:center;justify-content:center}
+.jellyCell.locked .jellyBlob{opacity:.42;filter:grayscale(.5)}
+.jellyFace{font-size:clamp(12px,1.2vw,16px);font-weight:900;color:#6B4A2F;letter-spacing:1px}
+.jellyName{font-weight:900;font-size:clamp(11px,1.15vw,14px);color:var(--cocoa);text-align:center}
+.jellyHow{font-size:clamp(10px,1vw,12px);text-align:center;line-height:1.2}
+.jellyPic{width:clamp(56px,6vw,72px);height:clamp(56px,6vw,72px);object-fit:contain;filter:drop-shadow(0 5px 8px rgba(120,80,50,.22))}
+.jellyCell.locked .jellyPic{filter:grayscale(1) brightness(1.05) opacity(.32)}
+.jellyPic.lg{width:clamp(96px,13vw,150px);height:clamp(96px,13vw,150px)}
+.jellyCell.popJelly .jellyPic{animation:jellyPop .5s ease-out}
+.jellyReward{display:flex;flex-direction:column;align-items:center;gap:1vh;margin:.6vh 0;padding:1.4vh 2vw;border-radius:22px;background:linear-gradient(180deg,#FFF6E2,#FFEFD2);box-shadow:0 10px 24px rgba(150,100,60,.18);border:3px solid #fff}
+.jellyReward > .mut{font-weight:900;color:#8A5A2B;font-size:clamp(14px,1.6vw,18px)}
+.jellyNewRow{display:flex;flex-wrap:wrap;justify-content:center;gap:2vw}
+.jellyNewCard{display:flex;flex-direction:column;align-items:center;gap:.4vh;animation:jellyIn .55s cubic-bezier(.2,1.4,.4,1) both}
+.jellyNewCard .jellyName{font-size:clamp(13px,1.4vw,16px)}
+@keyframes jellyIn{0%{transform:scale(.4) rotate(-8deg);opacity:0}70%{transform:scale(1.08) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+.jellyCell.popJelly .jellyBlob{animation:jellyPop .5s ease-out}
+@keyframes jellyPop{0%{transform:scale(1)}40%{transform:scale(1.28,.86)}70%{transform:scale(.94,1.08)}100%{transform:scale(1)}}
+/* 手机档必须写在基础样式之后，否则被后面的 repeat(6) 覆盖 */
+@media (max-width:760px){
+  .jellyGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2vh 2vw;max-height:none}
+  .jellyPic{width:clamp(64px,20vw,92px);height:clamp(64px,20vw,92px)}
+  .jellyBlob{width:clamp(52px,15vw,66px);height:clamp(52px,15vw,66px)}
+  .jellyName{font-size:clamp(12px,3.6vw,15px)}
+  .jellyHow{font-size:clamp(11px,3.2vw,13px);overflow-wrap:anywhere;word-break:break-word}
+  .v-quiz{justify-content:center}
+  .miniRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2vw;width:100%}
+  .miniRow > .h2{grid-column:1 / -1}
+  .miniRow .miniCard{flex-direction:column;text-align:center;padding:1vh 1vw;gap:.6vh}
+  .miniRow .thumb{width:clamp(46px,13vw,64px);height:clamp(46px,13vw,64px)}
+  .miniRow .miniCard .mut{font-size:11px !important}
+}
+/* ===== 回声页小鸭 ===== */
+.duckMini{width:clamp(22px,2.4vw,32px);height:auto;opacity:.8}
+.duckLost{position:absolute;right:2px;bottom:2px;width:38%;max-width:44px;height:auto;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(90,60,30,.3))}
+.wc{position:relative}
+/* 路线页：圆点里的星级要压小，否则三个字塞不下、看起来只是一块橙色 */
+.node .st{position:static;font-size:clamp(8px,1vw,11px);line-height:1;letter-spacing:-.06em;white-space:nowrap;color:#FFF8E7;text-shadow:0 1px 2px rgba(170,100,20,.55)}
+.node.boss .st{color:#FFF3F6}
+/* 翻图核对：图片“长出来”的轻动画，配合叮声 */
+.snapIn{animation:snapIn .32s ease-out}
+@keyframes snapIn{0%{transform:scale(.88);opacity:.4}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}
+/* 横屏平板：判定按钮做大，家长不用眯着眼点 */
+@media (orientation:landscape) and (min-height:560px){
+  .sayBtn{min-height:clamp(56px,10vh,86px);font-size:clamp(18px,2.1vw,26px);padding:1.2vh 2.4vw}
+  .sayRow{gap:1.6vw}
+}
+/* ===== 流畅模式（平板/手机）：安卓中低端 GPU 上大模糊阴影和高斯滤镜最拖帧，这里统一减负 ===== */
+@media (max-width:1180px){
+  .stage{transition:none}
+  .panel,.paper,.jellyReward,.tourCard,.modal{box-shadow:0 4px 12px rgba(140,100,70,.16)}
+  .btn,.opt,.sayBtn,.pickWord,.chip,.miniCard,.uChip,.slotRow,.starStr,.wc,.thumb,.qImg,.pvImg,.stat,.proveCard{box-shadow:0 3px 8px rgba(140,100,70,.14)}
+  .duck,.duckLost,.starBig,.jellyPic,.jellyBlob{filter:none}
+  .wc.gray,.wc.half{filter:none;opacity:.85}
+  .jellyCell.locked .jellyPic{filter:none;opacity:.3}
+  .wc.lowink::before{box-shadow:none;background:rgba(255,220,170,.28)}
+  .fire.lv4,.fire.lv5{box-shadow:none}
+}
+@media (max-width:760px){
+  .sugar{display:none}   /* 手机端撒糖粒子省掉，答对反馈交给星星和提示音 */
+}
+/* 手动/自动流畅模式：去掉阴影、滤镜和粒子，只留最必要的动画 */
+body.lite .panel,body.lite .paper,body.lite .jellyReward,body.lite .tourCard,body.lite .modal,
+body.lite .btn,body.lite .opt,body.lite .sayBtn,body.lite .pickWord,body.lite .chip,
+body.lite .miniCard,body.lite .uChip,body.lite .slotRow,body.lite .starStr,body.lite .wc,
+body.lite .thumb,body.lite .qImg,body.lite .pvImg,body.lite .stat,body.lite .node,
+body.lite .jellyCell{box-shadow:none !important;text-shadow:none !important}
+body.lite .duck,body.lite .duckLost,body.lite .starBig,body.lite .jellyPic,body.lite .jellyBlob{filter:none !important}
+body.lite .stage{transition:none !important}
+body.lite .sugar{display:none !important}
+body.lite .combo,body.lite .undoToast{animation:none !important}
+.echoDuck{width:clamp(110px,14vh,170px);height:auto;align-self:center;filter:drop-shadow(0 8px 14px rgba(170,120,80,.28))}
+.emptyEcho{width:min(640px,92vw);padding:4vh 3vw;align-items:center;text-align:center}
+.emptyEcho .btn{margin-top:1.2vh}
+.leadLetter{color:#E4761B;text-decoration:underline;text-decoration-thickness:.12em;text-underline-offset:.1em}
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+<div class="wrap" id="wrap"></div>
+<div class="foot" id="foot"></div>
+<script>
+const DATA={units:[
+{u:"u01",title:"The Animal Kingdom",words:["ant", "bird", "bell", "duck", "chicken", "pigeon", "giraffe", "deer", "crocodile", "cup", "dinosaur", "candy", "eagle", "rhino", "leopard", "peacock", "swan", "flamingo", "elf", "fan", "fire", "wing", "claw", "trunk", "fur", "feather", "horn", "girl", "hippo", "goldfish", "jump", "swing", "crawl", "climb", "bend", "stomp"],phonics:[{b:"a",w:["ant"]},{b:"b",w:["bird", "bell"]},{b:"c",w:["cup", "candy"]},{b:"d",w:["dinosaur"]},{b:"e",w:["elf"]},{b:"f",w:["fan", "fire"]},{b:"g",w:["girl", "goldfish"]},{b:"h",w:["hippo"]}],sentences:[{p:"It's a(n) + 动物",n:"用来介绍物品/动物",ex:["It's a duck.", "It's a chicken.", "It's an ant."]},{p:"It's not a(n) + 动物",n:"用来表示不是某个物品/动物",ex:["It's not a deer.", "It's not a giraffe.", "It's not an ant."]},{p:"Look at the + 动物",n:"用来提示别人看某个动物",ex:["Look at the rhino.", "Look at the peacock.", "Look at the swan."]},{p:"It has (+数量) + 身体部位",n:"用来介绍某个动物有什么身体部位",ex:["It has fur.", "It has wings.", "It has a trunk."]},{p:"It can + 动作",n:"用来介绍某个动物会做什么",ex:["It can jump.", "It can swing.", "It can climb."]}]},
+{u:"u02",title:"My Family and Me",words:["ill", "jello", "jug", "knee", "shoulder", "tongue", "feet", "teeth", "elbow", "kiss", "ladder", "lick", "hug", "smile", "yawn", "stand up", "sit down", "crouch", "mouse", "nod", "mug", "happy", "angry", "tired", "hungry", "full", "thirsty", "ostrich", "parrot", "pumpkin", "father", "mother", "grandfather", "sister", "brother", "grandmother"],phonics:[{b:"i",w:["ill"]},{b:"j",w:["jello", "jug"]},{b:"k",w:["kiss"]},{b:"l",w:["ladder", "lick"]},{b:"m",w:["mouse", "mug"]},{b:"n",w:["nod"]},{b:"o",w:["ostrich"]},{b:"p",w:["parrot", "pumpkin"]}],sentences:[{p:"Touch your + 身体部位",n:"给指令，让对方摸某个身体部位",ex:["Touch your knees.", "Touch your shoulders.", "Touch your feet."]},{p:"Let's + 动词/动词词组",n:"用来建议一起做某事",ex:["Let's stand up.", "Let's sit down.", "Let's go to the park."]},{p:"I'm + 形容词",n:"用来表达自己的感受",ex:["I'm hungry.", "I'm happy.", "I'm tired."]},{p:"He / She / 人名 is + 形容词",n:"用来描述他人的感受",ex:["He is angry.", "She is full.", "Emma is thirsty."]},{p:"This is my + 亲属",n:"用来介绍自己的亲属",ex:["This is my mother.", "This is my father.", "This is my brother."]}]},
+{u:"u03",title:"Welcome to My House",words:["question", "rainbow", "road", "bedroom", "bathroom", "playroom", "kitchen", "living room", "dining room", "sail", "touch", "tower", "stool", "armchair", "cabinet", "mirror", "rug", "curtain", "umbrella", "violin", "village", "doll", "sandbox", "toy box", "water gun", "play dough", "drone", "wand", "fix", "web", "get up", "go to bed", "shower", "put on", "take off", "tie"],phonics:[{b:"q",w:["question"]},{b:"r",w:["rainbow", "road"]},{b:"s",w:["sail"]},{b:"t",w:["touch", "tower"]},{b:"u",w:["umbrella"]},{b:"v",w:["violin", "village"]},{b:"w",w:["wand", "web"]},{b:"x",w:["fix"]}],sentences:[{p:"主语 + be + in the + 地点",n:"用来描述某人在某个地方",ex:["I'm in the bathroom.", "He is in the kitchen.", "Emma is in the bedroom."]},{p:"This / That is a / an + 物品",n:"用来介绍某个物体",ex:["This is a stool.", "That is a mirror.", "That is an armchair."]},{p:"I want (a) + 玩具",n:"用来表达想要什么玩具",ex:["I want a doll.", "I want a water gun.", "I want a drone."]},{p:"He / She / 人名 wants (a) + 玩具",n:"用来描述某人想要什么玩具",ex:["He wants a water gun.", "She wants a doll.", "Emma wants a drone."]},{p:"I + 动词短语",n:"用来描述自己做什么事情",ex:["I get up in the morning.", "I go to bed at 9.", "I put on my hat."]},{p:"He / She / 人名 + 动词短语",n:"用来描述某人做什么事情",ex:["He showers after dinner.", "She takes off her coat.", "Emma puts on her jacket."]}]},
+{u:"u04",title:"Tasty Food",words:["yell", "zebra", "zigzag", "kiwi", "coconut", "durian", "pineapple", "plum", "blueberry", "sad", "mad", "bad", "carrot", "yam", "corn", "cabbage", "cucumber", "mushroom", "nap", "map", "gap", "fries", "chips", "pudding", "yogurt", "ice cream", "cheese", "mat", "pat", "bat", "pizza", "soda", "pasta", "menu", "order", "restaurant"],phonics:[{b:"y",w:["yell"]},{b:"z",w:["zebra", "zigzag"]},{b:"ad",w:["sad", "mad", "bad"]},{b:"ap",w:["nap", "map", "gap"]},{b:"at",w:["mat", "pat", "bat"]}],sentences:[{p:"I like + 水果",n:"用来表示自己喜欢的水果",ex:["I like coconuts.", "I like plums.", "I like pineapples."]},{p:"He / She / 人名 likes + 水果",n:"用来表示他人喜欢的水果",ex:["He likes coconuts.", "She likes kiwis.", "Emma likes blueberries."]},{p:"I like to eat + 蔬菜",n:"用来介绍自己喜欢吃什以",ex:["I like to eat carrots.", "I like to eat cabbage.", "I like to eat cucumbers."]},{p:"I don't like to eat + 蔬菜",n:"用来介绍自己不喜欢吃什么",ex:["I don't like to eat yams.", "I don't like to eat corn.", "I don't like to eat mushrooms."]},{p:"主语 want(s) some + 食物",n:"用来表示某人想要什么食物",ex:["I want some fries.", "He wants some yoghurt.", "Emma wants some ice cream."]},{p:"I'd like some + 食物",n:"用来表示自己想吃或喝什么食物",ex:["I'd like some pizza.", "I'd like some soda.", "I'd like some pasta."]}]},
+{u:"u05",title:"My Neighborhood",words:["pet", "jet", "net", "hotel", "market", "pet store", "bakery", "bookstore", "salon", "den", "men", "Ben", "baker", "driver", "pilot", "painter", "dentist", "scientist", "fig", "wig", "dig", "rowing", "surfing", "diving", "swimming", "camping", "hiking", "pin", "fin", "bin", "plane", "train", "tank", "ship", "helicopter", "submarine"],phonics:[{b:"et",w:["pet", "jet", "net"]},{b:"en",w:["den", "men", "Ben"]},{b:"ig",w:["fig", "wig", "dig"]},{b:"in",w:["pin", "fin", "bin"]}],sentences:[{p:"I'm going to the + 地点",n:"用来介绍自己要去什么地方",ex:["I'm going to the market.", "I'm going to the bakery.", "I'm going to the bookstore."]},{p:"I'm a + 职业",n:"用来介绍自己的职业",ex:["I'm a driver.", "I'm a dentist.", "I'm a pilot."]},{p:"He / She / 人名 is a + 职业",n:"用来介绍他人的职业",ex:["She is a baker.", "He is a painter.", "Emma is a scientist."]},{p:"主语 go to + 地点 + by + 交通工具",n:"用来介绍自己用什么交通工具去某地",ex:["I go to the zoo by train.", "I go to the beach by plane.", "We go to the island by ship."]},{p:"主语 like(s) + 运动",n:"用来介绍某人喜欢做什么运动",ex:["I like surfing.", "He likes swimming.", "She likes camping."]}]},
+{u:"u06",title:"Amazing Nature",words:["pot", "dot", "cot", "grass", "river", "bridge", "bush", "stone", "mud", "top", "mop", "pop", "rose", "sunflower", "lotus flower", "leaf", "root", "stem", "bun", "fun", "gun", "sunrise", "sunset", "dew", "waterfall", "lake", "valley", "gum", "yum", "hum", "sunny", "windy", "foggy", "rainy", "cloudy", "snowy"],phonics:[{b:"ot",w:["pot", "dot", "cot"]},{b:"op",w:["top", "mop", "pop"]},{b:"un",w:["bun", "fun", "gun"]},{b:"um",w:["gum", "yum", "hum"]}],sentences:[{p:"主语 + can see + (a/some) + 名词",n:"用来描述自己能够看到的东西",ex:["I can see a river.", "I can see some grass.", "We can see some stones."]},{p:"The + 植物/植物部位 + be + 形容词",n:"用来描述植物是什么样子的",ex:["The rose is red.", "The sunflower is big.", "The leaf is green."]},{p:"主语 + want(s) to see the + 景观",n:"用来描述某人想看到什么",ex:["I want to see the sunrise.", "He wants to see the lake.", "She wants to see the waterfall."]},{p:"It's + 天气 + today",n:"用来描述今天的天气",ex:["It's sunny today.", "It's windy today.", "It's rainy today."]}]},
+{u:"u07",title:"School and Shapes",words:["bake", "game", "cane", "teacher", "student", "school bus", "desk", "chalk", "blackboard", "ride", "pipe", "bite", "six", "seven", "eight", "nine", "ten", "eleven", "rope", "bone", "home", "circle", "square", "triangle", "star", "heart", "diamond", "cute", "mule", "cube", "pick up", "put down", "lock", "get on", "get off", "park"],phonics:[{b:"a_e",w:["bake", "game", "cane"]},{b:"i_e",w:["ride", "pipe", "bite"]},{b:"o_e",w:["rope", "bone", "home"]},{b:"u_e",w:["cute", "mule", "cube"]}],sentences:[{p:"—Nice to meet you! / —Nice to meet you, too!",n:"和他人第一次见面时的打招呼用语",ex:["—Nice to meet you!", "—Nice to meet you, too!"]},{p:"—How many + 物体 + are there? / —数量",n:"用来询问和回答物体的数量",ex:["—How many chairs are there? —Five.", "—How many students are there? —Six.", "—How many books are there? —Eight."]},{p:"—What shape is it? / —It's a + 形状",n:"用来询问和回答物体的形状",ex:["—What shape is it? —It's a heart.", "—What shape is it? —It's a star.", "—What shape is it? —It's a diamond."]},{p:"—Let's + 动词/动词短语 + 其他 / —OK.",n:"用来提出建议，同意可用 OK 回答",ex:["—Let's get on the school bus. —OK.", "—Let's pick up the toys. —OK.", "—Let's put down the bags. —OK."]}]},
+{u:"u08",title:"My House and Things",words:["peel", "seesaw", "wheel", "toilet", "bathtub", "towel", "bookcase", "wardrobe", "fireplace", "peach", "meat", "bean", "chopsticks", "knife", "kettle", "jar", "bottle", "cupboard", "pail", "wait", "paint", "turn on", "turn off", "put away", "television", "camera", "remote", "seat", "cheek", "bait", "in", "on", "next to", "under", "behind", "in front of"],phonics:[{b:"ee",w:["peel", "seesaw", "wheel", "cheek"]},{b:"ea",w:["peach", "meat", "bean", "seat"]},{b:"ai",w:["pail", "wait", "paint", "bait"]}],sentences:[{p:"—What's this? / —It's a / an + 物品名称",n:"用来询问和回答某个物品是什么",ex:["—What's this? —It's a bookcase.", "—What's this? —It's a toilet.", "—What's this? —It's a bathtub."]},{p:"—What are they? / —They're + 物品名称",n:"用来询问和回答某些物品是什么",ex:["—What are they? —They're chopsticks.", "—What are they? —They're jars.", "—What are they? —They're bottles."]},{p:"—Can you + 动词 + 其他? / —No problem.",n:"用来请求对方做某事，同意可用 No problem 回答",ex:["—Can you turn on the television? —No problem.", "—Can you turn on the light? —No problem.", "—Can you put away the camera? —No problem."]},{p:"—Where is the + 物体? / —It's + 介词 + 地点",n:"用来询问和回答某样东西在什么地方",ex:["—Where is the book? —It's on the desk.", "—Where is the camera? —It's in the box.", "—Where is the remote? —It's next to the television."]}]},
+{u:"u09",title:"Food, Clothes and Colors",words:["hay", "jay", "lay", "fish", "beef", "pork", "pie", "hamburger", "sandwich", "coin", "point", "oil", "scarf", "glove", "belt", "watch", "ring", "necklace", "boy", "joy", "toy", "pink", "purple", "gray", "dark", "light", "color", "tray", "boil", "oyster", "pajamas", "slippers", "hoodie", "tight", "loose", "large"],phonics:[{b:"ay",w:["hay", "jay", "lay", "tray"]},{b:"oi",w:["coin", "point", "oil", "boil"]},{b:"oy",w:["boy", "joy", "toy", "oyster"]}],sentences:[{p:"—Would you like some + 食物? / —Yes, please. / No, thanks.",n:"询问别人是否想吃某样东西",ex:["—Would you like some fish? —Yes, please.", "—Would you like some pie? —Yes, please.", "—Would you like some beef? —No, thanks."]},{p:"—Do you like the / this / that + 衣物? / —Yes, I do. / No, I don't.",n:"询问别人是否喜欢某个配饰",ex:["—Do you like the watch? —Yes, I do.", "—Do you like the scarf? —Yes, I do.", "—Do you like the ring? —No, I don't."]},{p:"—What color is it? / —It's + 颜色",n:"询问和回答某样东西的颜色",ex:["—What color is it? —It's dark blue.", "—What color is it? —It's light green.", "—What color is it? —It's dark gray."]},{p:"—Can I help you? / —Yes, I'm looking for + 衣服",n:"购物时店员询问是否需要帮助",ex:["—Can I help you? —Yes, I'm looking for slippers.", "—Can I help you? —Yes, I'm looking for pajamas.", "—Can I help you? —Yes, I'm looking for hoodies."]}]},
+{u:"u10",title:"Places and Fun",words:["blow", "blouse", "blush", "mall", "theater", "water park", "museum", "gym", "supermarket", "plant", "play", "plug", "bounce", "build", "hide", "win", "lose", "race", "closet", "clothes", "cloak", "basket", "tissue", "picnic", "dinner", "roast", "barbecue", "clown", "blanket", "plaza", "dolphin", "lobster", "squid", "movie", "ticket", "popcorn"],phonics:[{b:"bl",w:["blow", "blouse", "blush", "blanket"]},{b:"pl",w:["plant", "play", "plug", "plaza"]},{b:"cl",w:["closet", "clothes", "cloak", "clown"]}],sentences:[{p:"—Where are you going? / —I'm going to the + 地点",n:"询问和回答某人正要去什么地方",ex:["—Where are you going? —I'm going to the gym.", "—Where are you going? —I'm going to the theater.", "—Where are you going? —I'm going to the museum."]},{p:"—What do you like to do? / —I like to + 动词",n:"询问和回答喜欢做什么事情",ex:["—What do you like to do? —I like to bounce the ball.", "—What do you like to do? —I like to build sandcastles.", "—What do you like to do? —I like to play basketball."]},{p:"—Why don't we + 动词 + 其他? / —Good idea.",n:"用来建议一起做某事",ex:["—Why don't we go on a picnic? —Good idea.", "—Why don't we use the jam? —Good idea.", "—Why don't we bring some food? —Good idea."]},{p:"—What can you see? / —I can see a + 动物",n:"询问和回答能看到什么动物",ex:["—What can you see? —I can see a dolphin.", "—What can you see? —I can see a lobster.", "—What can you see? —I can see a squid."]}]},
+{u:"u11",title:"Seasons and Weather",words:["fly", "flag", "flute", "cave", "desert", "hive", "jungle", "pond", "mountain", "brown", "brick", "broken", "spring", "summer", "squirrel", "fall", "winter", "hedgehog", "crib", "crown", "cross", "warm", "cool", "icy", "storm", "lightning", "thunder", "crane", "broom", "flea", "wet", "dry", "swamp", "shallow", "deep", "ocean"],phonics:[{b:"fl",w:["fly", "flag", "flute", "flea"]},{b:"br",w:["brown", "brick", "broken", "broom"]},{b:"cr",w:["crib", "crown", "cross", "crane"]}],sentences:[{p:"—Where do + 动物 live? / —They live + 地点",n:"询问和回答某种动物住在什么地方",ex:["—Where do camels live? —They live in deserts.", "—Where do fish live? —They live in ponds.", "—Where do bears live? —They live in caves."]},{p:"—What is + 形容词? / —The + 物体 + is + 形容词",n:"询问和回答什么样的东西具备某个特点",ex:["—What is deep? —The ocean is deep.", "—What is dry? —The desert is dry.", "—What is wet? —The swamp is wet."]},{p:"There is + 天气名词",n:"用来描述有什么样的天气现象",ex:["There is lightning.", "There is thunder.", "There is a storm."]},{p:"—What's your favorite season? / —My favorite season is + 季节",n:"询问和回答最喜欢的季节",ex:["—What's your favorite season? —My favorite season is spring.", "—What's your favorite season? —My favorite season is summer.", "—What's your favorite season? —My favorite season is winter."]},{p:"—What's the weather like today? / —It's + 天气 + today",n:"询问和回答今天的天气",ex:["—What's the weather like today? —It's warm today.", "—What's the weather like today? —It's cool today.", "—What's the weather like today? —It's icy today."]}]},
+{u:"u12",title:"Magic and Growing",words:["prince", "princess", "present", "loud", "quiet", "noisy", "rough", "smooth", "sharp", "dream", "drive", "drag", "caterpillar", "tadpole", "turn into", "seed", "sprout", "vine", "tractor", "trap", "trash", "fold", "roll", "cut", "push", "pull", "carry", "trumpet", "dragon", "proud", "sink", "float", "tank", "sponge", "paper boat", "magnet"],phonics:[{b:"pr",w:["prince", "princess", "present", "proud"]},{b:"dr",w:["dream", "drive", "drag", "dragon"]},{b:"tr",w:["tractor", "trap", "trash", "trumpet"]}],sentences:[{p:"—How does it + sound / feel? / —It's + 形容词",n:"询问和回答某样东西听起来或摸起来的感觉",ex:["—How does it sound? —It's noisy.", "—How does it feel? —It's smooth.", "—How does it feel? —It's rough."]},{p:"The + 动植物 + turns / grows into + 动植物",n:"描述某种动物或植物会变成或长成什么样子",ex:["The caterpillar turns into a butterfly.", "The tadpole turns into a frog.", "The seed grows into a sprout."]},{p:"—Can you + 动词 + 其他 + for me? / —Sure.",n:"询问他人能否帮自己做某事",ex:["—Can you push the box for me? —Sure.", "—Can you fold this blanket for me? —Sure.", "—Can you roll this dough for me? —Sure."]},{p:"—Which one sinks / floats? / —The + 物体 + sinks / floats.",n:"询问和回答什么东西会沉下去或浮起来",ex:["—Which one sinks? —The rock sinks.", "—Which one sinks? —The magnet sinks.", "—Which one floats? —The sponge floats."]}]}
+]};
+const SIGHT=["the", "a", "is", "it", "this", "i", "you", "my", "to", "can", "like", "see", "do", "some", "he", "she", "are", "what", "where", "yes"];
+const LOWINK=["u01_001", "u01_004", "u01_020", "u01_024", "u01_026", "u01_032", "u01_035", "u02_002", "u02_003", "u02_020", "u02_021", "u02_023", "u02_033", "u02_035", "u03_005", "u03_006", "u03_007", "u03_008", "u03_012", "u03_015", "u03_018", "u03_020", "u03_028", "u03_030", "u03_033", "u04_002", "u04_003", "u04_005", "u04_008", "u04_014", "u04_017", "u04_024", "u04_025", "u04_030", "u04_032", "u04_034", "u05_003", "u05_004", "u05_016", "u05_023", "u05_025", "u05_027", "u05_035", "u06_002", "u06_003", "u06_011", "u06_013", "u06_018", "u07_001", "u07_009", "u07_010", "u07_011", "u07_017", "u07_018", "u07_020", "u07_034", "u07_035", "u07_036", "u08_001", "u08_003", "u08_007", "u08_008", "u08_009", "u08_011", "u08_013", "u08_014", "u08_016", "u08_017", "u08_018", "u08_019", "u08_020", "u08_022", "u08_023", "u08_025", "u08_026", "u08_027", "u08_028", "u08_030", "u08_031", "u08_033", "u08_034", "u08_036", "u09_018", "u09_025", "u09_029", "u09_033", "u10_012", "u11_003", "u12_013"];
+/* ================= 数据 ================= */
+/*__DATA__*/
+
+/* ================= 工具 ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const el = (tag, cls, html) => { const d = document.createElement(tag); if (cls) d.className = cls; if (html != null) d.innerHTML = html; return d; };
+const pad3 = n => String(n).padStart(3, '0');
+/* 资源解析：单文件版把资源内嵌成 data URI（window.__EMBED），普通版仍走相对路径 */
+const EMB = (typeof window !== 'undefined' && window.__EMBED) || {};
+const bob = p => EMB[p] || p;
+/* 换过的图片统一加版本号，避免平板/手机浏览器继续用缓存里的旧图 */
+const AV = p => EMB[p] ? EMB[p] : p + '?v=3';
+const IMG = (u, i) => AV(`assets/ui/wordimg4/${u}_${pad3(i + 1)}.webp`);
+const BG = {
+  camp: 'assets/bg/bg_p01_camp.webp', route: 'assets/bg/bg_p02_route.webp', quiz: 'assets/bg/bg_p03_quiz.webp',
+  result: 'assets/bg/bg_p04_result.webp', echo: 'assets/bg/bg_p05_echo.webp', report: 'assets/bg/bg_p06_report.webp',
+  setting: 'assets/bg/bg_p07_setting.webp', preview: 'assets/bg/bg_p08_preview.webp', words: 'assets/bg/bg_p09_words.webp'
+};
+const DUCK = { idle: 'assets/characters/char_duck_idle.png', sit: AV('assets/characters/char_duck_sit.png'), cheer: 'assets/characters/char_duck_cheer.png' };
+Object.keys(BG).forEach(k => { BG[k] = bob(BG[k]); });
+Object.keys(DUCK).forEach(k => { DUCK[k] = bob(DUCK[k]); });
+const DAYS = [{ k: 'D1', name: '周一关' }, { k: 'D2', name: '周二关' }, { k: 'D3', name: '周三关' }, { k: 'D4', name: '周四复习' }, { k: 'D5', name: '周五总结' }, { k: 'D6', name: '周六加练' }];
+const DAY_BY_JS = ['D6', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6']; // 0=周日
+
+function todayStr(d) { d = d || new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function parseD(s) { const [y, m, dd] = s.split('-').map(Number); return new Date(y, m - 1, dd); }
+function addDays(s, n) { const d = parseD(s); d.setDate(d.getDate() + n); return todayStr(d); }
+function daysBetween(a, b) { return Math.round((parseD(b) - parseD(a)) / 864e5); }
+function rnd(seed) { let x = Math.sin(seed * 9301 + 49297) * 233280; return x - Math.floor(x); }
+function shuffle(arr, seed) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd(seed + i * 7) * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ================= 存档 ================= */
+const KEY = 'zmS3_camp_v1';
+function defState() {
+  return { v: 1, start: '2026-11-02', holidays: [14, 15, 26, 48], stars: {}, mastery: {}, echo: [], stickers: [], badges: [], stamps: {}, intern: false, fire: 0, jelly: [], rescued: 0, tour: false, sentGuide: false, lite: null, lastOpen: '', lastBackup: '', logs: [], meas: [], drill: null, onlyLearned: true, lag: 0, sight: [] };
+}
+let S = defState();
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(defState(), JSON.parse(raw)); } catch (e) { S = defState(); }
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
+/* 旧档补发：U1 已有星星、但还没拿到“起步果冻”的，自动补一只（v1.4 起 U1 门槛降为 1 星） */
+function migrate() {
+  if (!S.jelly.includes('u01') && Object.keys(S.stars || {}).some(k => k.indexOf('u01_') === 0)) {
+    S.jelly.push('u01'); save();
+  }
+}
+/* 流畅模式：低配设备自动简化阴影/滤镜；家长也可以在设置里强行开或关 */
+function applyLite() {
+  const auto = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 3;
+  const on = S.lite == null ? auto : !!S.lite;
+  document.body.classList.toggle('lite', on);
+  window.LITE_ON = on;
+}
+/* 家长判定快捷键：答题页按 1=说出来了 / 2=提示后 / 3=没说（仅当页面上有判定按钮时生效） */
+function bindQuizKeys() {
+  document.addEventListener('keydown', e => {
+    if (VIEW !== 'quiz' || !e.key || e.key.length !== 1) return;
+    if (e.key < '1' || e.key > '3') return;
+    const btns = document.querySelectorAll('.sayRow .sayBtn');
+    const b = btns[Number(e.key) - 1];
+    if (b) { e.preventDefault(); b.click(); }
+  });
+}
+
+/* ================= 日历 ================= */
+function weekNo(dateStr) { return Math.floor(daysBetween(S.start, dateStr) / 7) + 1; }
+function isHoliday(w) { return S.holidays.includes(w); }
+function kOf(w) { let off = 0; for (const h of S.holidays) if (h < w) off++; return w - off; }
+function unitOfK(k) { return Math.min(12, Math.max(1, Math.ceil(k / 4))); }
+function weekInUnit(k) { return ((k - 1) % 4) + 1; }
+const U = n => DATA.units[n - 1];
+function unitKey(n) { return 'u' + String(n).padStart(2, '0'); }
+
+/* ================= 掌握度 ================= */
+function mGet(id) { return (S.mastery[id] && S.mastery[id].m) || 0; }
+function mSet(id, c, dateStr) {
+  const old = S.mastery[id];
+  const base = old ? old.m : 0;
+  const nm = Math.max(0, Math.min(100, Math.round(base + 0.30 * (100 * c - base))));
+  S.mastery[id] = { m: nm, last: dateStr || todayStr() };
+  return [base, nm];
+}
+function decay(now) {
+  if (S.lastOpen === now) return false;
+  for (const id in S.mastery) {
+    const rec = S.mastery[id];
+    if (!rec.last) continue;
+    const gap = daysBetween(rec.last, now);
+    if (gap > 7) rec.m = Math.max(0, rec.m - 4 * (gap - 7));
+  }
+  S.lastOpen = now; save(); return true;
+}
+function wordState(m) { return m < 1 ? 'gray' : m < 70 ? 'half' : m < 90 ? 'full' : 'gold'; }
+/* 给孩子看的档位文字，替代 0/51/83 这种分数 */
+function stateText(m) { return m < 1 ? '还没练' : m < 40 ? '练过一次' : m < 70 ? '有点印象' : m < 90 ? '快熟了' : '很熟'; }
+
+/* ================= 组卷 ================= */
+function arrayOfWeek(u, wi) { const w = U(u).words; return w.slice((wi - 1) * 9, wi * 9); }
+/* 当天最多能出到本周第几个词：周一 3、周二 6、周三之后 9 */
+function dayCap(dk) { return dk === 'D1' ? 3 : dk === 'D2' ? 6 : 9; }
+/* 某个单元的哪些词“现在可以看/可以考”：词卡页、复习勾选、出题都用它，
+   避免周一就看到周三才教的新词 */
+function visibleWords(u, dk) {
+  const cap = dayCap(dk), lw = learnedWeek();
+  return U(u).words.map((w, i) => ({ w, i })).filter(({ i }) => {
+    if (!S.onlyLearned) return true;
+    const gw = (u - 1) * 4 + Math.floor(i / 9) + 1;
+    if (gw > lw) return false;                      // 还没教到的周
+    if (gw === lw) return i % 9 < cap;              // 本周还没到那天的词
+    return true;                                    // 以前的周：都学过
+  });
+}
+
+function buildSession(u, wi, dk) {
+  const unit = U(u);
+  const weekWords = arrayOfWeek(u, wi);
+  const words = unit.words;
+  const seed = u * 1000 + wi * 10 + DAYS.findIndex(d => d.k === dk) + weekNo(todayStr()) + (S.logs ? S.logs.length : 0);
+  /* 只出已学过的词：既按“周”过滤，也按“星期几”过滤。
+     D1 只到本周前 3 个词、D2 到前 6 个、D3 才放开 9 个——否则周一一开局就会抽到周三才教的词。 */
+  const unitWeek = (u - 1) * 4 + wi;
+  const capNow = dayCap(dk);
+  const capIdx = unitWeek >= learnedWeek() ? capNow : 9;   // 本周还没学完就按天卡住；已经学过的旧周全放
+  const scoped = weekWords.slice(0, capIdx);
+  const allowed = scoped.filter(w => wordLearned(u, w));
+  const usable = allowed.length ? allowed : scoped;
+  let targets = [];
+  if (dk === 'D1') targets = usable.slice(0, 3);
+  if (dk === 'D2') targets = usable.slice(3, 6);
+  if (dk === 'D3') targets = usable.slice(6, 9);
+  if (dk === 'D4') targets = usable.slice().sort((a, b) => mGet(idOf(u, a)) - mGet(idOf(u, b))).slice(0, 3);
+  if (dk === 'D5') targets = shuffle(usable, seed).slice(0, 3);   // 周五总结：本周随机抽 3
+  if (dk === 'D6') targets = shuffle(usable, seed).slice(0, 3);   // 周六加练
+  const qs = [];
+  // 3 道 T3 看图说词（弱项：概念 -> 词）
+  targets.forEach(w => qs.push({ t: 'T3', word: w, id: idOf(u, w) }));
+  // 2 道 T4 看词读出来（弱项：形 -> 音；先读，后翻图核对）
+  const others = scoped.filter(w => !targets.includes(w) && wordLearned(u, w));
+  // 跨周兜底时也要排掉“本周还没到那天”的词，别把明天的新词混进来
+  const learnedPool = words.filter((w, idx) => !targets.includes(w) && wordLearned(u, w) &&
+    !(Math.floor(idx / 9) + 1 === wi && idx % 9 >= capIdx));
+  // 最后的兜底只用“今天及以前”的词，宁可和 T3 重复，也不把明天的新词提前放出来
+  const t4pool = others.length >= 2 ? others : (learnedPool.length ? learnedPool : usable);
+  const t4a = shuffle(t4pool, seed + 1)[0];
+  const t4b = shuffle(t4pool.filter(w => w !== t4a), seed + 2)[0];
+  [t4a, t4b].forEach(w => { if (w) qs.push({ t: 'T4', word: w, id: idOf(u, w) }); });
+  // 1 道拼读
+  const groups = unit.phonics;
+  const gi = (wi * 2 + DAYS.findIndex(d => d.k === dk)) % groups.length;
+  const g = groups[gi];
+  const target = shuffle(g.w, seed + 5)[0];
+  // 干扰项也只用“今天及以前”的词，避免选项里冒出还没教的生词
+  const seenPool = words.slice(0, (wi - 1) * 9 + capIdx);
+  const distract = shuffle(seenPool.filter(w => !g.w.includes(w)), seed + 6).slice(0, Math.max(0, 3 - g.w.length));
+  qs.push({ t: 'T5', badge: g.b, word: target, id: idOf(u, target),
+    options: shuffle(g.w.concat(distract), seed + 7).slice(0, 3) });
+  return { u, wi, dk, qs, key: `${unitKey(u)}_w${wi}_${dk}` };
+}
+
+function idOf(u, w) { const unit = U(u); const i = unit.words.indexOf(w); return `${unitKey(u)}_${pad3(i + 1)}`; }
+
+/* 词属于「第几周」（全局课次周：U1W1=1 … U12W4=48） */
+function weekIdxOf(u, w) {
+  const i = U(u).words.indexOf(w);
+  if (i < 0) return 999;
+  return (u - 1) * 4 + Math.floor(i / 9) + 1;
+}
+/* 已学到第几周：日历周次 - 家长设置的落后周数 */
+function learnedWeek() { return kOf(weekNo(todayStr())) - (S.lag || 0); }
+/* 开关关掉时一律放行 */
+function wordLearned(u, w) {
+  if (!S.onlyLearned) return true;
+  return weekIdxOf(u, w) <= learnedWeek();
+}
+
+/* 家长勾选复习清单 → 6 题小局（3 看图说词 + 3 看词读），不评星、不入营 */
+function buildDrill(u, words) {
+  const list = words && words.length ? words.slice(0, 36) : [];
+  const qs = [];
+  for (let i = 0; i < 6 && list.length; i++) {
+    const w = list[i % list.length];
+    qs.push({ t: (i % 2 === 0 ? 'T3' : 'T4'), word: w, id: idOf(u, w) });
+  }
+  return { u, wi: 0, dk: 'DR', qs, key: 'drill_' + unitKey(u), drill: true };
+}
+
+/* ================= 判定与结算 ================= */
+let SES = null, QI = 0, RES = [];
+function credit(code) { return code === 'ok' ? 1 : code === 'hint' ? 0.5 : 0; }
+function ceilStars(a, n) { return { s3: Math.ceil(0.8 * n), s2: Math.ceil(0.55 * n), s1: Math.ceil(0.35 * n) }; }
+
+function finishSession() {
+  const n = 5; // 星级只看 5 个词位
+  let A = 0, sum = 0, phOk = true;
+  RES.forEach((r, i) => {
+    const q = SES.qs[i];
+    const c = credit(r.code);
+    sum += c;
+    if (q.t !== 'T5') { if (r.code === 'ok') A++; }
+    else { if (r.code !== 'ok') phOk = false; }
+  });
+  const th = ceilStars(0, n);
+  const stars = A >= th.s3 ? 3 : A >= th.s2 ? 2 : A >= th.s1 ? 1 : 0;
+  const now = todayStr();
+  // 掌握度写入
+  const changes = [];
+  RES.forEach((r, i) => {
+    const q = SES.qs[i];
+    const [o, nm] = mSet(q.id, credit(r.code), now);
+    changes.push({ word: q.word, o, n: nm, c: credit(r.code) });
+  });
+  // 错题回声：救回一只 -> 从回声里移走并累计“救回数”
+  let rescued = 0;
+  const echoBefore = S.echo.map(e => e.id);
+  RES.forEach((r, i) => {
+    const q = SES.qs[i];
+    if (r.code !== 'ok') {
+      const ex = S.echo.find(e => e.id === q.id);
+      if (ex) { ex.n++; } else S.echo.push({ id: q.id, u: SES.u, w: q.word });
+    } else {
+      if (echoBefore.indexOf(q.id) >= 0) rescued++;
+      S.echo = S.echo.filter(e => e.id !== q.id);
+    }
+  });
+  if (rescued) S.rescued = (S.rescued || 0) + rescued;
+  // 星级存档（取历史最好）——复习清单小局不计星
+  const isDrill = !!SES.drill;
+  const isEcho = !!SES.isEcho;
+  if (!isDrill && !isEcho) {
+    const prev = S.stars[SES.key];
+    S.stars[SES.key] = { stars: Math.max(stars, prev ? prev.stars : 0), A, ts: now };
+  }
+  // 拼读印章：本周 3 次拼读位全对
+  if (phOk && !isDrill && !isEcho) {
+    const wk = unitKey(SES.u) + '_w' + SES.wi;
+    S.stamps[wk] = (S.stamps[wk] || 0) + 1;
+  }
+  // 贴纸：周六关结算时，本周 ≥3 天
+  let gotSticker = null;
+  if (SES.dk === 'D6') {
+    const wk = unitKey(SES.u) + '_w' + SES.wi;
+    const cnt = DAYS.filter(d => S.stars[wk + '_' + d.k]).length;
+    if (cnt >= 3) {
+      const gold = cnt >= 5;
+      const ex = S.stickers.find(s => s.wk === wk);
+      if (!ex) { S.stickers.push({ wk, gold, ts: now }); gotSticker = { gold }; }
+    }
+  }
+  // 徽章：第 4 周周六关（Boss）1 星以上
+  let gotBadge = null;
+  if (SES.wi === 4 && SES.dk === 'D6' && stars >= 1) {
+    const uk = unitKey(SES.u);
+    if (!S.badges.includes(uk)) { S.badges.push(uk); gotBadge = uk; }
+  }
+  // 见习章：新档第一周任意一关拿到 2 星，当场发（单独字段，不占 12 枚营地徽章）
+  let gotIntern = false;
+  if (!S.intern && !isDrill && SES.wi === 1 && stars >= 2) { S.intern = true; gotIntern = true; }
+  // 本周 3 天刚凑齐：当天就告诉孩子“格子满了”，正式贴纸仍周六发
+  let weekFullNow = false;
+  if (!isDrill) {
+    const wk = unitKey(SES.u) + '_w' + SES.wi;
+    const cnt = DAYS.filter(d => S.stars[wk + '_' + d.k]).length;
+    if (cnt === 3 && !S.stickers.find(s => s.wk === wk)) weekFullNow = true;
+  }
+  // 营火：每完成一关添一根柴（复习/救鸭不算），6 根升 1 级，共 5 级
+  const fireBefore = S.fire || 0;
+  let fireUp = 0;
+  if (!isDrill && !isEcho) S.fire = Math.min(30, fireBefore + 1);
+  const lv = f => Math.min(5, Math.floor(f / 6) + 1);
+  if (lv(S.fire) > lv(fireBefore)) fireUp = lv(S.fire);
+  // 果冻图鉴：单元内第一次拿到三星，掉一只普通果冻
+  // U1 作为起步单元降低门槛（任意 1 星），让孩子第一天就能点亮一格
+  let jellyNew = null;
+  if (!isDrill && !isEcho) {
+    const need = SES.u === 1 ? 1 : 3;
+    if (stars >= need) {
+      const uk = unitKey(SES.u);
+      if (!S.jelly.includes(uk)) { S.jelly.push(uk); jellyNew = uk; }
+    }
+  }
+  // 稀有果冻三个：营火满级 / 累计救回 10 只小鸭 / 拿到金边贴纸
+  const rareNow = [];
+  const give = id => { if (!S.jelly.includes(id)) { S.jelly.push(id); rareNow.push(id); } };
+  if (lv(S.fire) === 5) give('rare_fire');
+  if ((S.rescued || 0) >= 10) give('rare_rescue');
+  if (S.stickers.some(s => s.gold)) give('rare_gold');
+  S.logs.push({ key: SES.key, stars: (isDrill || isEcho) ? null : stars, A, sum, ts: now, drill: isDrill });
+  save();
+  const mins = Math.max(1, Math.round((Date.now() - (SES.t0 || Date.now())) / 60000));
+  /* 实测记录：独立完成率 / 专注时长 / 中途离开次数 */
+  const away = SES.away || 0;
+  const nq = SES.qs.filter(q => q.t !== 'T5').length || 5;
+  const indep = Math.round(A / nq * 100);
+  S.meas = S.meas || [];
+  S.meas.push({ ts: now, key: SES.key, drill: isDrill, mins, indep, away, stars: (isDrill || isEcho) ? null : stars, a: A, nq: nq });
+  if (S.meas.length > 60) S.meas = S.meas.slice(-60);
+  save();
+  return { stars, A, sum, n: 6, nq, changes, gotSticker, gotBadge, gotIntern, weekFullNow, phOk, mins, indep, away, drill: isDrill, isEcho, rescued, jellyNew, fireUp, newRares: rareNow, fireLevel: lv(S.fire) };
+}
+
+/* 中途切走算一次分心：答题中离开超过 8 秒才记一次 */
+let HIDDEN_TS = 0;
+function trackAway() {
+  document.addEventListener('visibilitychange', () => {
+    if (typeof VIEW === 'undefined' || VIEW !== 'quiz' || !SES || !SES.qs) return;
+    if (document.hidden) { HIDDEN_TS = Date.now(); return; }
+    if (HIDDEN_TS && Date.now() - HIDDEN_TS >= 8000) SES.away = (SES.away || 0) + 1;
+    HIDDEN_TS = 0;
+  });
+}
+
+/* ================= 单元掌握度 ================= */function unitMastery(u) {
+  const unit = U(u);
+  const uk = unitKey(u);
+  // 逐周累加：完成某周任一关即解锁该周 9 词 + 该周拼读组
+  let W = 0, sum = 0, ids = [];
+  for (let wi = 1; wi <= 4; wi++) {
+    const wkDone = DAYS.some(d => S.stars[uk + '_w' + wi + '_' + d.k]);
+    if (!wkDone) continue;
+    arrayOfWeek(u, wi).forEach(w => { ids.push([idOf(u, w), 1.0]); });
+    const g = unit.phonics[(wi * 2) % unit.phonics.length];
+    ids.push([uk + '#ph#' + g.b, 1.0]);
+  }
+  ids.forEach(([id, wt]) => { sum += wt * mGet(id); W += wt; });
+  return W ? Math.round(sum / W) : 0;
+}
+
+/* ================= 声音 ================= */
+let VOICE = null;
+function initVoice() {
+  if (!window.speechSynthesis || !speechSynthesis.getVoices) return;
+  const pick = () => {
+    const vs = speechSynthesis.getVoices();
+    VOICE = vs.find(v => /en[-_]US/i.test(v.lang) && /female|Samantha|Zira|Google US/i.test(v.name)) || vs.find(v => /en/i.test(v.lang)) || null;
+  };
+  pick(); speechSynthesis.onvoiceschanged = pick;
+}
+function say(text, rate) {
+  if (!window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = rate || 0.86; u.pitch = 1.06;
+    if (VOICE) u.voice = VOICE;
+    speechSynthesis.speak(u);
+  } catch (e) { }
+}
+/* 拼读位用：把单词拆成字母逐个念（b, e, l, l），帮不会读整词的孩子先听字母 */
+function sayLetters(w) {
+  const letters = String(w || '').replace(/[^A-Za-z]/g, '').split('');
+  if (!letters.length) return;
+  say(letters.join(', '), 0.5);
+}
+
+/* 播本地音频（assets/audio/words/uXX_001.mp3）；没有文件就退回系统发音 */
+let CUR_AUDIO = null;
+let AUDIO_SEQ = 0;
+let PAGE_SEQ = 0;
+/* 任何页面切换、下一题、离开句型页都调用它：掐掉正在播的音，避免“图换了音还在” */
+function stopAudio() {
+  AUDIO_SEQ++;
+  if (CUR_AUDIO) {
+    const a = CUR_AUDIO; CUR_AUDIO = null;
+    try { a.onended = null; a.onerror = null; a.pause(); } catch (e) { }
+    // 把音源掐掉：只 pause 的话，网络慢时 play() 的 Promise 晚到还会把上一题的词放出来
+    try { a.removeAttribute('src'); a.load(); } catch (e) { }
+  }
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) { }
+}
+/* 带页面令牌的延迟动作：换页/换题后令牌变了，这次播放直接作废，避免“图换了音还在” */
+function laterOnPage(fn, ms) {
+  const ps = PAGE_SEQ;
+  setTimeout(() => { if (ps === PAGE_SEQ) fn(); }, ms);
+}
+/* 图片预加载：把后面几页要用的图提前拉下来，切页不用干等 */
+const PRE_IMG = {};
+function preloadImg(src) {
+  if (!src || PRE_IMG[src]) return;
+  const im = new Image();
+  im.decoding = 'async';
+  im.src = src;
+  PRE_IMG[src] = im;
+}
+/* 进入游戏后空闲时把 9 张背景预热（一张一张来，避免开机瞬间一起解码造成卡顿） */
+function warmBgs() {
+  const list = Object.keys(BG).map(k => BG[k]);
+  let i = 0;
+  const tick = () => {
+    if (i >= list.length) return;
+    preloadImg(list[i++]);
+    setTimeout(tick, 220);
+  };
+  setTimeout(tick, 1600);
+}
+/* 音频预加载：句型连读前先把整句每个词的 mp3 拉到本地，避免最后一个词“慢半拍” */
+const PRE_AUDIO = {};
+function preloadAudio(src) {
+  if (!src || PRE_AUDIO[src]) return PRE_AUDIO[src];
+  try { const a = new Audio(); a.preload = 'auto'; a.src = bob(src); PRE_AUDIO[src] = a; return a; } catch (e) { return null; }
+}
+function sayAudio(path, fallbackText, rate, cb) {
+  const done = typeof cb === 'function' ? cb : () => { };
+  try {
+    if (CUR_AUDIO) { CUR_AUDIO.pause(); CUR_AUDIO = null; }
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    const a = new Audio(bob(path));
+    CUR_AUDIO = a;
+    a.onended = () => done();
+    a.onerror = () => { say(fallbackText, rate); setTimeout(done, Math.max(500, String(fallbackText).length * 90 + 400)); };
+    const p = a.play();
+    if (p && p.catch) p.catch(() => { say(fallbackText, rate); setTimeout(done, Math.max(500, String(fallbackText).length * 90 + 400)); });
+  } catch (e) { say(fallbackText, rate); setTimeout(done, 700); }
+}
+function sayWord(id, word, rate, cb) {
+  sayAudio(`assets/audio/words/${id}.mp3`, word, rate, cb);
+}
+/* 句型例句音频：uXX_sNN.mp3，NN = 该单元内例句的连续序号（p1 第1例=01） */
+const pad2 = n => String(n).padStart(2, '0');
+function sentNo(unit, gi, ei) {
+  let k = 0;
+  for (let i = 0; i < gi; i++) k += (unit.sentences[i].ex || []).length;
+  return k + ei + 1;
+}
+function saySent(u, gi, ei, text, rate) {
+  const path = `assets/audio/sent/${unitKey(u)}_s${pad2(sentNo(U(u), gi, ei))}.mp3`;
+  sayAudio(path, text, rate || 0.82);
+}
+/* 词不在本单元词表里时退回系统发音 */
+function sayWordIn(u, w, rate, cb) {
+  const unit = U(u);
+  const clean = String(w).replace(/[^A-Za-z']/g, '');   // 句子里带句号/逗号，去掉再查词表，尽量用词表里的真人音
+  const i = unit.words.indexOf(clean);
+  if (i < 0) { say(clean, rate); if (typeof cb === 'function') setTimeout(cb, 700); return; }
+  sayWord(`${unitKey(u)}_${pad3(i + 1)}`, clean, rate, cb);
+}
+let AC = null;
+function blip(kind) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type = 'sine';
+    const f = kind === 'ok' ? 720 : kind === 'hint' ? 520 : 300;
+    o.frequency.value = f; g.gain.value = 0.08;
+    o.start(); o.frequency.exponentialRampToValueAtTime(f * 1.35, AC.currentTime + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.22);
+    o.stop(AC.currentTime + 0.24);
+  } catch (e) { }
+}
+function sugarBurst(x, y) {
+  if (window.innerWidth <= 760) return;   // 手机端跳过粒子动画，避免小机器掉帧
+  for (let i = 0; i < 5; i++) {
+    const d = el('div', 'sugar');
+    d.style.left = (x + (Math.random() - .5) * 90) + 'px';
+    d.style.top = (y + (Math.random() - .5) * 60) + 'px';
+    document.body.appendChild(d);
+    const dx = (Math.random() - .5) * 220, dy = -60 - Math.random() * 120;
+    d.animate([{ transform: 'translate(0,0) scale(.4)', opacity: 1 }, { transform: `translate(${dx}px,${dy}px) scale(1)`, opacity: 0 }], { duration: 700 + Math.random() * 400, easing: 'cubic-bezier(.2,.6,.3,1)' });
+    setTimeout(() => d.remove(), 1200);
+  }
+}
+
+/* ============ 视图 ============ */
+/* ================= 视图常量 ================= */
+const FOOT = [
+  { k: 'camp', n: '营地', bg: 'camp' }, { k: 'route', n: '路线', bg: 'route' },
+  { k: 'cards', n: '词卡', bg: 'words' }, { k: 'report', n: '周报', bg: 'report' },
+  { k: 'setting', n: '设置', bg: 'setting' }
+];
+let VIEW = 'camp';
+
+function go(v, params) {
+  VIEW = v; P = params || {};
+  render();
+}
+
+/* ================= 今日上下文 ================= */
+function ctxToday() {
+  const now = todayStr();
+  const w = weekNo(now);
+  const hol = isHoliday(w);
+  const k = kOf(w);
+  const u = unitOfK(k), wi = weekInUnit(k);
+  const jd = DAY_BY_JS[new Date().getDay()];
+  return { now, w, hol, k, u, wi, dk: jd };
+}
+
+/* ================= 渲染入口 ================= */
+let P = {};
+function render() {
+  const st = $('#stage'), wrap = $('#wrap'), foot = $('#foot');
+  document.querySelectorAll('.guideOv').forEach(x => x.remove());   // 换页时收掉说明弹层，避免盖住新页面
+  stopAudio();                       // 换页/换题先掐掉上一段音，防止声音串到下一张图
+  PAGE_SEQ++;                        // 页面令牌：延迟播放的音效要先核对是否是本页
+  wrap.className = 'wrap v-' + VIEW;
+  const bgMap = { camp: BG.camp, route: BG.route, quiz: BG.quiz, result: BG.result, echo: BG.echo, report: BG.report, setting: BG.setting, preview: BG.preview, cards: BG.words, sentence: BG.echo, sight: BG.camp, jelly: BG.camp };
+  st.style.backgroundImage = `url("${bgMap[VIEW] || BG.camp}")`;
+  wrap.innerHTML = '';
+  const fns = {
+    camp: viewCamp, route: viewRoute, quiz: viewQuiz, result: viewResult, echo: viewEcho,
+    report: viewReport, setting: viewSetting, preview: viewPreview, cards: viewCards, sentence: viewSentence, sight: viewSight, jelly: viewJelly
+  };
+  (fns[VIEW] || viewCamp)(wrap);
+  wrap.scrollTop = 0;                 // 手机/平板上翻过页后，新页面从顶部开始，不带上一页的滚动位置
+  // 底栏
+  foot.innerHTML = '';
+  const inPlay = VIEW === 'quiz';
+  if (!inPlay) {
+    FOOT.forEach(f => {
+      const b = el('button', 'footBtn' + (VIEW === f.k ? ' on' : ''), f.n);
+      b.onclick = () => go(f.k);
+      foot.appendChild(b);
+    });
+  }
+  foot.style.display = inPlay ? 'none' : 'flex';
+}
+
+/* ================= P01 今日营地 ================= */
+function viewCamp(wrap) {
+  const c = ctxToday();
+  const uk = unitKey(c.u);
+  const key = `${uk}_w${c.wi}_${c.dk}`;
+  const done = S.stars[key];
+  // 顶栏
+  const top = el('div', 'topbar');
+  const left = el('div', 'row');
+  left.appendChild(el('div', 'chip', `第 ${c.w} 周 · ${c.u} 号营地${c.wi !== c.w ? ` · 本单元第 ${c.wi} 周` : ''}`));
+  const wkDays = DAYS.filter(d => S.stars[`${uk}_w${c.wi}_${d.k}`]).length;
+  // 本周 3 格：当天过关就亮一格，不用等到周六
+  const slots = el('div', 'slotRow');
+  for (let i = 0; i < 3; i++) {
+    slots.appendChild(el('div', 'stampSlot' + (i < wkDays ? ' on' : ''), i < wkDays ? '✓' : '·'));
+  }
+  left.appendChild(slots);
+  // 星星串：把"数字"变成看得见的一串
+  const totalStars = Object.values(S.stars).reduce((a, v) => a + (v.stars || 0), 0);
+  const starStr = el('div', 'starStr');
+  const showN = Math.min(totalStars, 12);
+  for (let i = 0; i < showN; i++) starStr.appendChild(el('div', 'starMini'));
+  if (totalStars > 12) starStr.appendChild(el('div', 'mut', `+${totalStars - 12}`));
+  starStr.appendChild(el('div', 'mut', totalStars ? `${totalStars} 颗星` : '还没攒星星'));
+  left.appendChild(starStr);
+  top.appendChild(left);
+  const right = el('div', 'row');
+  right.appendChild(el('div', 'chip', `贴纸 ${S.stickers.length} · 徽章 ${S.badges.length}${S.intern ? ' · 见习' : ''}`));
+  const btnSet = el('button', 'footBtn', '家长');
+  btnSet.onclick = () => go('setting');
+  right.appendChild(btnSet);
+  top.appendChild(right);
+  wrap.appendChild(top);
+
+  // 第一次打开的新手指引：只出现一次，看过就写进存档（老档有进度就不再打扰）
+  if (!S.tour && totalStars === 0) {
+    const mask = el('div', 'tourMask');
+    const card = el('div', 'tourCard');
+    card.appendChild(el('div', 'h1', '欢迎来到冒险营地'));
+    card.appendChild(el('div', 'mut', '第一次来，用 30 秒看一下怎么玩；以后不会再弹。'));
+    [
+      ['① 每天一关', '先看 3 张词卡 → 说出英文 → 家长点一档：说出来了 / 提示后 / 没说。一关 6 题，约 6–9 分钟。'],
+      ['② 星星和格子', '一关最多 3 颗星；当天过关，营地"本周 3 格"就亮一格，一周来 3 天就有贴纸。'],
+      ['③ 顺手集东西', '每过一关营火加一根柴；三星还会掉果冻，集满 15 格有惊喜；答错的词会变成"躲着的小鸭"。'],
+      ['④ 句型回声（不打分）', '四步：听整句 → 指词读 → 挖空补词 → 把空格里的词换掉。只记录做到哪一步。']
+    ].forEach(([t, d]) => {
+      const row = el('div', 'tourRow');
+      row.appendChild(el('div', 'tourT', t));
+      row.appendChild(el('div', 'tourD', d));
+      card.appendChild(row);
+    });
+    const b = el('button', 'btn', '知道啦，开始玩');
+    b.onclick = () => { S.tour = true; save(); mask.remove(); };
+    card.appendChild(b);
+    mask.appendChild(card);
+    document.body.appendChild(mask);   // 挂到 body：否则会被底部导航的层级压住
+  }
+
+  if (c.hol) {
+    const p = el('div', 'panel resWrap');
+    p.innerHTML = `<div class="h1">这周停课</div>
+      <div class="mut" style="font-size:clamp(15px,1.7vw,20px);text-align:center">去回声页把学过的词玩一玩，不算缺课、不补欠账。</div>`;
+    const row = el('div', 'row');
+    const b1 = el('button', 'btn', '去昨日回声'); b1.onclick = () => go('echo');
+    const b2 = el('button', 'btn pink', '翻词卡'); b2.onclick = () => go('cards');
+    row.appendChild(b1); row.appendChild(b2);
+    p.appendChild(row);
+    wrap.appendChild(p); return;
+  }
+
+  const grid = el('div', 'campGrid');
+  // 左：今日
+  const left2 = el('div', 'panel dueCard');
+  const dname = (DAYS.find(d => d.k === c.dk) || { name: '休息' }).name;
+  left2.innerHTML = `<div class="row" style="justify-content:space-between">
+      <div><div class="h2">${dname}</div><div class="mut" style="font-size:13px">${c.now}</div></div>
+      <div class="chip">${done ? '已通关 ' + '★'.repeat(done.stars) : '今天还没开始'}</div>
+    </div>`;
+  const words = todayTargets(c.u, c.wi, c.dk);
+  const strip = el('div', 'row miniRow', `<div class="h2" style="width:100%">今天要看的 3 张卡</div>`);
+  words.forEach(w => {
+    const d = el('div', 'miniCard');
+    const t = el('div', 'thumb'); t.style.backgroundImage = `url("${IMG(uk, U(c.u).words.indexOf(w))}")`;
+    d.appendChild(t);
+    d.appendChild(el('div', '', `<div style="font-weight:900;font-size:clamp(14px,1.6vw,20px)">${w}</div>
+      <div class="mut" style="font-size:12px">${stateText(mGet(idOf(c.u, w)))}</div>`));
+    strip.appendChild(d);
+  });
+  left2.appendChild(strip);
+  // 今日三步：只做状态显示，不再做成看起来能点的按钮
+  const steps = el('div', 'stepRow');
+  const stepInfo = el('div', 'stepLine');
+  stepInfo.innerHTML = `<b>${done ? '3' : '0'}/3</b> 步 · 每关固定 3 道「看图说词」${done ? '，今天这关已经点亮了' : '，说出来就点亮一小步'}`;
+  steps.appendChild(stepInfo);
+  left2.appendChild(steps);
+  const row2 = el('div', 'row');
+  const bStart = el('button', 'btn green', done ? '再玩一次' : '开始闯关');
+  bStart.onclick = () => startSession(c.u, c.wi, c.dk);
+  const bPv = el('button', 'btn ghost', '预习 90 秒');
+  bPv.onclick = () => go('preview', { u: c.u, wi: c.wi, dk: c.dk });
+  const bSen = el('button', 'btn pink', '句型回声');
+  bSen.onclick = () => go('sentence', { u: c.u, wi: c.wi });
+  row2.appendChild(bStart); row2.appendChild(bPv); row2.appendChild(bSen);
+  left2.appendChild(row2);
+  const row2b = el('div', 'row');
+  const bSight = el('button', 'btn sm ghost', '认词小站（the / is / it …）');
+  bSight.onclick = () => go('sight');
+  row2b.appendChild(bSight);
+  left2.appendChild(row2b);
+  const duck = el('img', 'duck campDuck'); duck.src = DUCK.idle; left2.appendChild(duck);
+  grid.appendChild(left2);
+
+  // 右：明日 + 收藏
+  const right2 = el('div', 'col');
+  const next = nextSession(c);
+  const c2 = el('div', 'panel', `<div class="h2">下一关</div>
+    <div style="font-weight:900;font-size:clamp(18px,2.1vw,26px)">${next.name}</div>
+    <div class="mut">${next.desc}</div>`);
+  c2.style.width = '100%'; c2.style.padding = '2vh 1.6vw'; c2.style.display = 'flex'; c2.style.flexDirection = 'column'; c2.style.gap = '.6vh';
+  right2.appendChild(c2);
+
+  const echoN = S.echo.length;
+  const duckIcons = el('div', 'row');
+  duckIcons.style.cssText = 'justify-content:flex-start;gap:6px;margin:6px 0';
+  const duckShow = Math.min(echoN, 6);
+  for (let i = 0; i < duckShow; i++) {
+    const im = el('img', 'duckMini'); im.src = DUCK.sit;
+    duckIcons.appendChild(im);
+  }
+  if (echoN > 6) duckIcons.appendChild(el('div', 'chip', `+${echoN - 6}`));
+  const c3 = el('div', 'panel', `<div class="h2">等你救的小鸭</div>
+    <div style="font-weight:900;font-size:clamp(20px,2.4vw,30px)">${echoN} 个词</div>
+    <div class="mut">${echoN ? '答错过的词躲起来了，点进去找回来' : '今天没有错词，很好'}</div>`);
+  c3.style.width = '100%'; c3.style.padding = '2vh 1.6vw';
+  if (echoN) c3.appendChild(duckIcons);
+  const bE = el('button', 'btn sm ghost', '去回声页');
+  bE.onclick = () => go('echo');
+  c3.appendChild(bE);
+  right2.appendChild(c3);
+
+  // 营火：5 级养成
+  const fireLv = Math.min(5, Math.floor((S.fire || 0) / 6) + 1);
+  const fireP = el('div', 'panel firePanel');
+  fireP.appendChild(el('div', 'h2', `我的营火 · 第 ${fireLv} 级`));
+  const fw = el('div', 'fireWrap');
+  const ci = el('img', 'campfire lv' + fireLv);
+  ci.src = AV('assets/ui/campfire.webp');
+  ci.alt = '营火';
+  fw.appendChild(ci);
+  fireP.appendChild(fw);
+  fireP.appendChild(el('div', 'mut', `再玩 ${6 - ((S.fire || 0) % 6)} 关就能再升一级（最高 5 级）`));
+  fireP.lastChild.style.fontSize = '12px';
+  fireP.style.width = '100%'; fireP.style.padding = '2vh 1.6vw';
+  right2.appendChild(fireP);
+
+  const c4 = el('div', 'panel', `<div class="h2">我的收藏</div>
+    <div class="row" style="justify-content:flex-start;gap:.6vw;margin-top:6px">
+      <div class="chip">贴纸 ${S.stickers.length}</div><div class="chip">徽章 ${S.badges.length}</div>
+      <div class="chip">拼读印 ${Object.values(S.stamps).reduce((a, b) => a + b, 0)}</div>
+      <div class="chip">果冻 ${S.jelly.length}/15</div>
+    </div>`);
+  c4.style.width = '100%'; c4.style.padding = '2vh 1.6vw';
+  const bJelly = el('button', 'btn sm', '果冻图鉴');
+  bJelly.onclick = () => go('jelly');
+  c4.appendChild(bJelly);
+  right2.appendChild(c4);
+  grid.appendChild(right2);
+  wrap.appendChild(grid);
+}
+
+function todayTargets(u, wi, dk) {
+  const wk = arrayOfWeek(u, wi);
+  if (dk === 'D1') return wk.slice(0, 3);
+  if (dk === 'D2') return wk.slice(3, 6);
+  if (dk === 'D3') return wk.slice(6, 9);
+  if (dk === 'D4') return wk.slice().sort((a, b) => mGet(idOf(u, a)) - mGet(idOf(u, b))).slice(0, 3);
+  return shuffle(wk, wi + 9).slice(0, 3);
+}
+function nextSession(c) {
+  const idx = DAYS.findIndex(d => d.k === c.dk);
+  if (idx >= 0 && idx < DAYS.length - 1 && c.now === todayStr()) {
+    return { name: DAYS[idx + 1].name, desc: `明天见，${DAYS[idx + 1].k === 'D6' ? '本周 9 词总检 + 上周错题回声' : '当天新学的 3 个词'}` };
+  }
+  const nx = addDays(c.now, 1);
+  return { name: '明天 · ' + nx, desc: '打开时按日历自动排' };
+}
+
+/* ================= P08 预习 ================= */
+function viewPreview(wrap) {
+  const { u, wi, dk } = P;
+  // 与正式出题同源：预习只预热今天真正会考到的词（已按“只出已学词”过滤）
+  const words = buildSession(u, wi, dk).qs.filter(q => q.t === 'T3').map(q => q.word);
+  let i = 0, left = 90;
+  const panel = el('div', 'panel pvCard');
+  const head = el('div', 'h2', '先看一眼今天要见的词');
+  const timer = el('div', 'timer', '还剩 90 秒');
+  const img = el('div', 'pvImg');
+  const lab = el('div', '', `<div style="font-weight:900;font-size:clamp(18px,2.2vw,28px);text-align:center" id="pvword"></div>`);
+  const row = el('div', 'row');
+  const bHear = el('button', 'btn sm', '听一次');
+  const bNext = el('button', 'btn sm ghost', '下一个词');
+  row.appendChild(bHear); row.appendChild(bNext);
+  panel.appendChild(head); panel.appendChild(timer); panel.appendChild(img); panel.appendChild(lab); panel.appendChild(row);
+  panel.appendChild(el('div', 'mut', '只播一次音、只给词和图；不判对错、不记成绩。'));
+  const bEnd = el('button', 'btn pink sm', '看完了，去闯关');
+  bEnd.onclick = () => { startSession(u, wi, dk); };
+  panel.appendChild(bEnd);
+  wrap.appendChild(panel);
+
+  function paint() {
+    const w = words[i];
+    img.style.backgroundImage = `url("${IMG(unitKey(u), U(u).words.indexOf(w))}")`;
+    $('#pvword').textContent = w;
+  }
+  paint();
+  sayWord(idOf(u, words[0]), words[0]);
+  bHear.onclick = () => sayWord(idOf(u, words[i]), words[i]);
+  bNext.onclick = () => { i = (i + 1) % words.length; paint(); sayWord(idOf(u, words[i]), words[i]); };
+  const t = setInterval(() => {
+    left--; timer.textContent = `还剩 ${left} 秒`;
+    if (left <= 0) {
+      clearInterval(t); timer.textContent = '时间到，接着去闯关吧';
+      panel.querySelector('.mut').textContent = '预习结束，不扣分也不记分。';
+    }
+  }, 1000);
+  bEnd.addEventListener('click', () => clearInterval(t), { once: true });
+}
+
+/* ================= P03 答题 ================= */
+function warmSessionImgs(ses) {
+  ses.qs.forEach(q => {
+    const qu = q.echoUnit || ses.u;
+    const i = U(qu).words.indexOf(q.word);
+    if (i >= 0) preloadImg(IMG(unitKey(qu), i));
+    if (q.options) q.options.forEach(o => {
+      const j = U(ses.u).words.indexOf(o);
+      if (j >= 0) preloadImg(IMG(unitKey(ses.u), j));
+    });
+  });
+}
+function startSession(u, wi, dk) {
+  SES = buildSession(u, wi, dk); QI = 0; RES = [];
+  SES.t0 = Date.now(); SES.fails = 0; SES.away = 0; SES.combo = 0;
+  warmSessionImgs(SES);            // 整局 6～8 张图一次拉完，答题时不再一张一张等
+  go('quiz');
+}
+function startDrill(u, words) {
+  if (!words || !words.length) { alert('先勾几个词再开始。'); return; }
+  SES = buildDrill(u, words); QI = 0; RES = [];
+  SES.t0 = Date.now(); SES.fails = 0; SES.away = 0; SES.combo = 0;
+  warmSessionImgs(SES);
+  go('quiz');
+}
+function viewQuiz(wrap) {
+  wrap.classList.add('quizWrap');
+  const q = SES.qs[QI];
+  const bar = el('div', 'quizBar');
+  const back = el('button', 'btn ghost sm', '退出');
+  back.onclick = () => { if (confirm('中途退出不算失败，也不写掌握度。确定退出？')) { SES = null; go('camp'); } };
+  const prog = el('div', 'prog', `<i style="width:${(QI / SES.qs.length) * 100}%"></i>`);
+  bar.appendChild(back); bar.appendChild(prog);
+  bar.appendChild(el('div', 'chip', `${QI + 1} / ${SES.qs.length}`));
+  wrap.appendChild(bar);
+
+  const card = el('div', 'panel qCard');
+  const uk = unitKey(SES.u);
+
+  if (q.t === 'T3') {
+    card.appendChild(el('div', 'mut', '这张卡，说出它的英文'));
+    const qu = q.echoUnit || SES.u;
+    const img = el('div', 'qImg'); img.style.backgroundImage = `url("${IMG(unitKey(qu), U(qu).words.indexOf(q.word))}")`;
+    card.appendChild(img);
+    const hear = el('button', 'btn sm ghost', '听发音');
+    hear.onclick = () => sayWord(q.id, q.word);
+    if (SES.fails >= 2) card.appendChild(hear);   // 开了提示才给听，防直接听音猜答案
+    const asks = el('div', 'sayRow');
+    const opts = [['g', '说出来了', 'ok'], ['y', '提示后', 'hint'], ['r', '没说', 'no']];
+    opts.forEach(([c, label, code]) => {
+      const b = el('div', 'sayBtn ' + c, label);
+      b.onclick = () => answer(code, b);
+      asks.appendChild(b);
+    });
+    card.appendChild(asks);
+    card.appendChild(gameHintRow(q, card));
+    const rowHelp = el('div', 'row');
+    rowHelp.appendChild(el('div', 'mut', '自己读出＝说出来了｜听了游戏提示再读＝提示后'));
+    const bHelp = el('button', 'btn sm ghost', '怎么判？');
+    bHelp.onclick = openJudgeGuide;
+    rowHelp.appendChild(bHelp);
+    card.appendChild(rowHelp);
+  }
+
+  if (q.t === 'T4') {
+    card.appendChild(el('div', 'mut', '先看首字母，再一个音一个音拼出来'));
+    const wEl = el('div', 'h1');
+    const ww = String(q.word || '');
+    const lead = el('span', 'leadLetter', ww.slice(0, 1));
+    wEl.appendChild(lead);
+    wEl.appendChild(document.createTextNode(ww.slice(1)));
+    // 长单词（crocodile 这类）在手机上按 8vh 会撑出面板、断成两行，改成按屏宽收缩
+    wEl.style.fontSize = 'clamp(28px,9vw,62px)';
+    wEl.style.lineHeight = '1.15';
+    wEl.style.letterSpacing = '.04em';
+    wEl.style.wordBreak = 'break-word';
+    wEl.style.overflowWrap = 'anywhere';
+    card.appendChild(wEl);
+    const snap = el('div', 'qImg');
+    snap.style.backgroundImage = `url("${IMG(uk, U(SES.u).words.indexOf(q.word))}")`;
+    snap.style.display = 'none';
+    card.appendChild(snap);
+    const reveal = el('button', 'btn sm ghost', '翻图核对');
+    reveal.onclick = () => {
+      snap.style.display = 'block';
+      snap.classList.add('snapIn');
+      sayWord(q.id, q.word);
+      blip('ok');                     // 轻快“叮”：翻开图的一瞬间给正反馈
+      reveal.style.display = 'none';
+    };
+    card.appendChild(reveal);
+    const bSpell = el('button', 'btn sm ghost', '拼字母：一个字母一个字母读');
+    bSpell.onclick = () => sayLetters(q.word);
+    card.appendChild(bSpell);
+    const asks = el('div', 'sayRow');
+    [['g', '说出来了', 'ok'], ['y', '提示后', 'hint'], ['r', '没说', 'no']].forEach(([c, label, code]) => {
+      const b = el('div', 'sayBtn ' + c, label);
+      b.onclick = () => answer(code, b);
+      asks.appendChild(b);
+    });
+    card.appendChild(asks);
+    card.appendChild(gameHintRow(q, card));
+    const rowH4 = el('div', 'row');
+    rowH4.appendChild(el('div', 'mut', '先读，再翻图听音核对'));
+    const bH4 = el('button', 'btn sm ghost', '怎么判？');
+    bH4.onclick = openJudgeGuide;
+    rowH4.appendChild(bH4);
+    card.appendChild(rowH4);
+  }
+
+  if (q.t === 'T1') {
+    card.appendChild(el('div', 'mut', '看图，选出正确的词'));
+    const img = el('div', 'qImg'); img.style.backgroundImage = `url("${IMG(uk, U(SES.u).words.indexOf(q.word))}")`;
+    card.appendChild(img);
+    const g = el('div', 'optGrid');
+    q.options.forEach(o => {
+      const b = el('div', 'opt', o);
+      b.onclick = () => answer(o === q.word ? 'ok' : 'no', b);
+      g.appendChild(b);
+    });
+    card.appendChild(g);
+  }
+
+  if (q.t === 'T2') {
+    card.appendChild(el('div', 'mut', '这个词，选出对应的图'));
+    card.appendChild(el('div', 'h1', q.word));
+    const g = el('div', 'optGrid');
+    q.options.forEach(o => {
+      const b = el('div', 'opt optImg');
+      const im = el('div', 'qImg'); im.style.backgroundImage = `url("${IMG(uk, U(SES.u).words.indexOf(o))}")`;
+      b.appendChild(im);
+      b.onclick = () => answer(o === q.word ? 'ok' : 'no', b);
+      g.appendChild(b);
+    });
+    card.appendChild(g);
+  }
+
+  if (q.t === 'T5') {
+    card.appendChild(el('div', 'mut', '听音，找出属于这个字母组合的词'));
+    card.appendChild(el('div', 'badge', q.badge));
+    const hear = el('button', 'btn sm', '再听一次');
+    hear.onclick = () => sayWord(q.id, q.word, 0.78);
+    card.appendChild(hear);
+    const g = el('div', 'optGrid');
+    let wrong = 0;
+    const liveOpts = () => Array.from(g.querySelectorAll('.opt')).filter(x => x.onclick);
+    // 把“最后一个活选项”直接点亮并记账：孩子不用再点一次“一选一”
+    const autoPickLast = (rb, code) => {
+      rb.classList.add('ok');
+      rb.style.boxShadow = '0 0 0 3px rgba(255,190,80,.75)';
+      rb.onclick = null;
+      sayWord(q.id, q.word);
+      card.appendChild(el('div', 'mut retryTip', `只剩这一个啦，跟着读一遍：${q.word}`));
+      setTimeout(() => answer(code, rb), 900);
+    };
+    q.options.forEach(o => {
+      const b = el('div', 'opt', o);
+      b.onclick = () => {
+        if (o === q.word) { answer('ok', b); return; }
+        // 点错：排掉这一项
+        wrong++;
+        b.classList.add('no');
+        b.style.opacity = '.45';
+        b.onclick = null;
+        blip('hint');
+        const live = liveOpts();
+        if (live.length === 1) {         // 错项已排完，剩下唯一选项必然正确
+          autoPickLast(live[0], wrong >= 2 ? 'no' : 'hint');
+          return;
+        }
+        if (wrong >= 2) {                // 两次都点错＝没认出，按「没说」记（T5 不计星）
+          answer('no', b);
+          return;
+        }
+        if (!card.querySelector('.retryTip')) {
+          card.appendChild(el('div', 'mut retryTip', '这个不对，再试一次'));
+        }
+      };
+      g.appendChild(b);
+    });
+    card.appendChild(g);
+    laterOnPage(() => sayWord(q.id, q.word, 0.78), 200);
+  }
+  wrap.appendChild(card);
+  // 下一题的图和词图先悄悄下载好，点下一题时不用再等一分钟
+  const nq = SES.qs[QI + 1];
+  if (nq) {
+    const nu = nq.echoUnit || SES.u, nuk = unitKey(nu);
+    const pre = w => { const i = U(nu).words.indexOf(w); if (i >= 0) preloadImg(IMG(nuk, i)); };
+    pre(nq.word);
+    if (nq.options) nq.options.forEach(pre);
+  }
+}
+
+/* 家长误点兜底：每题记完 3 秒内可撤销（含最后一题——整局成绩一起回滚） */
+let UNDO = null;
+function showUndo(code, qi, snap, finished) {
+  const old = document.getElementById('undoToast');
+  if (old) old.remove();
+  const label = code === 'ok' ? '说出来了' : code === 'hint' ? '提示后' : '没说';
+  const box = el('div', 'undoToast');
+  box.id = 'undoToast';
+  box.appendChild(el('span', '', `上一题记为「${label}」`));
+  const b = el('button', 'undoBtn', '撤销');
+  b.onclick = () => {
+    box.remove();
+    const u = UNDO; UNDO = null;
+    if (!u) return;
+    if (u.finished) {                       // 整局已结算 → 回滚存档再回到最后一题
+      S = JSON.parse(JSON.stringify(u.snap));
+      save();
+      QI = u.qi; RES = RES.slice(0, u.qi);
+      go('quiz');
+    } else {
+      QI = u.qi; RES = RES.slice(0, u.qi);
+      render();
+    }
+  };
+  box.appendChild(b);
+  document.body.appendChild(box);
+  UNDO = { qi, snap, finished };
+  setTimeout(() => { if (box.parentNode) box.remove(); if (UNDO && UNDO.qi === qi) UNDO = null; }, 3000);
+}
+
+/* 连击提示：连对 3/5/8 题时闪一下，不打断答题 */
+function showCombo(n) {
+  const t = el('div', 'combo', `连对 ${n} 题！`);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 950);
+}
+
+function answer(code, node) {
+  const q = SES.qs[QI];
+  const snap = JSON.parse(JSON.stringify(S));   // 撤销用的存档快照
+  const qiNow = QI;
+  RES[QI] = { code };
+  if (code === 'ok') {
+    SES.fails = 0;
+    SES.combo = (SES.combo || 0) + 1;
+    if (SES.combo === 3 || SES.combo === 5 || SES.combo === 8) showCombo(SES.combo);
+    node.classList.add('ok'); blip('ok'); sugarBurst(window.innerWidth / 2, window.innerHeight / 2);
+  }
+  // hint 不清零 fails：用过提示不该把“听音防猜”的防护重新关掉，防护开了本局就保持
+  else if (code === 'hint') { SES.combo = 0; node.classList.add('no'); blip('hint'); }
+  else {
+    SES.fails++;
+    SES.combo = 0;
+    node.classList.add('no'); blip('no');
+    // 给出正确答案
+    const card = node.closest('.qCard');
+    const tip = el('div', 'mut', `答案是：<b>${q.word}</b>`);
+    card.appendChild(tip);
+    laterOnPage(() => sayWord(q.id, q.word), 120);   // 本页内播答案，页面令牌一变就不再出声
+  }
+  setTimeout(() => {
+    QI++;
+    if (QI >= SES.qs.length) {
+      const r = finishSession();
+      go('result', { r, ses: SES });
+      showUndo(code, qiNow, snap, true);
+    } else {
+      render();
+      showUndo(code, qiNow, snap, false);
+    }
+  }, code === 'ok' ? 420 : 900);
+}
+
+/* ================= P04 结算 ================= */
+function viewResult(wrap) {
+  const { r, ses } = P;
+  const panel = el('div', 'panel resWrap');
+  const title = ses.isEcho ? (r.rescued ? `救回来了 ${r.rescued} 只小鸭！` : '小鸭还在躲着，再去看看')
+    : r.drill ? '复习清单练完了' : (r.stars >= 3 ? '太棒了，三颗星！' : r.stars === 2 ? '不错，两颗星！' : r.stars === 1 ? '过关啦，一颗星！' : '没关系，明天再来');
+  panel.appendChild(el('div', 'h1', title));
+
+  // 孩子层：星星逐颗弹出（错开 180ms）
+  const stars = el('div', 'starRow');
+  for (let i = 0; i < 3; i++) {
+    const s = el('div', 'starBig' + ((r.drill || i >= r.stars) ? ' off' : ''));
+    if (!r.drill && i < r.stars) {
+      s.classList.add('pop');
+      s.style.animationDelay = (i * 180) + 'ms';
+    }
+    stars.appendChild(s);
+  }
+  panel.appendChild(stars);
+
+  // 孩子层：一句人话 + 鸭子
+  const wrongWords = [];
+  (ses.qs || []).forEach((q, i) => {
+    const code = (RES[i] || {}).code;
+    if (code && code !== 'ok' && wrongWords.indexOf(q.word) < 0) wrongWords.push(q.word);
+  });
+  const duck = el('img', 'duck');
+  duck.src = r.stars >= 2 ? DUCK.cheer : DUCK.sit;
+  duck.style.position = 'static'; duck.style.marginTop = '-10px';
+  if (r.stars >= 2) duck.classList.add('duckJump');
+  panel.appendChild(duck);
+  const kidLine = ses.isEcho ? (r.rescued ? '每救回一只，小鸭就飞回岸边' : '再听两遍，它们就跑不掉了')
+    : wrongWords.length
+    ? `今天说对了 ${(ses.qs || []).filter((q, i) => ((RES[i] || {}).code === 'ok') && wrongWords.indexOf(q.word) < 0).length} 个词，还有 ${wrongWords.length} 只小鸭在躲着`
+    : '全部说对，太厉害了！';
+  panel.appendChild(el('div', 'h2', kidLine));
+
+  // 孩子层：奖励（贴纸/徽章只在孩子层出现，不掺数据）
+  const rewards = el('div', 'row');
+  const newJellies = [];
+  if (r.jellyNew) newJellies.push(r.jellyNew);
+  if (r.newRares && r.newRares.length) r.newRares.forEach(id => newJellies.push(id));
+  if (r.gotIntern) rewards.appendChild(el('div', 'chip', '见习章到手！你现在有小徽章了'));
+  if (r.fireUp) rewards.appendChild(el('div', 'chip', `营火升到第 ${r.fireUp} 级！`));
+  if (r.weekFullNow) rewards.appendChild(el('div', 'chip', '这周 3 格满啦！周六来拿正式贴纸'));
+  if (r.gotSticker) rewards.appendChild(el('div', 'chip', r.gotSticker.gold ? '金边贴纸！这周全到齐了' : '拿到 1 枚贴纸！这周来够 3 天'));
+  if (r.gotBadge) rewards.appendChild(el('div', 'chip', `解锁营地徽章：${r.gotBadge.toUpperCase()}`));
+  if (rewards.children.length) panel.appendChild(rewards);
+
+  // 新果冻当场亮相：以前只在图鉴里多一格，孩子根本没看见自己拿到了什么
+  if (newJellies.length) {
+    const box = el('div', 'jellyReward');
+    box.appendChild(el('div', 'mut', '新伙伴加入图鉴！'));
+    const jrow = el('div', 'jellyNewRow');
+    newJellies.forEach(id => {
+      const c = el('div', 'jellyNewCard');
+      c.appendChild(jellyPic(id, 132));
+      c.appendChild(el('div', 'jellyName', jellyName(id)));
+      jrow.appendChild(c);
+    });
+    box.appendChild(jrow);
+    const bSee = el('button', 'btn sm ghost', '去图鉴看看');
+    bSee.onclick = () => go('jelly');
+    box.appendChild(bSee);
+    // 放在标题正下方：孩子一进结算页先看见“新伙伴”，不用往下翻
+    panel.insertBefore(box, title.nextSibling);
+    sugarBurst(window.innerWidth / 2, window.innerHeight * 0.35);
+  }
+
+  // 孩子层：错的词可以立刻再练
+  if (wrongWords.length) {
+    const wRow = el('div', 'wrongRow');
+    wrongWords.slice(0, 6).forEach(w => wRow.appendChild(el('div', 'chip', w)));
+    panel.appendChild(wRow);
+    const bAgain = el('button', 'btn', `把这 ${Math.min(wrongWords.length, 6)} 个词再练一遍`);
+    bAgain.onclick = () => startDrill(ses.u, wrongWords.slice(0, 6));
+    panel.appendChild(bAgain);
+    panel.appendChild(el('div', 'mut', '不急着一次练完，累了就下次再练——今天已经玩够了。'));
+  }
+
+  // 家长层：默认折叠，孩子看不到百分数
+  const parentBox = el('div', 'resParent');
+  parentBox.style.display = 'none';
+  const stats = el('div', 'resStats');
+  stats.innerHTML = `<div class="stat"><b>${r.A}/${r.nq}</b><span>首次说对/读对</span></div>
+    <div class="stat"><b>${r.indep}%</b><span>独立完成率</span></div>
+    <div class="stat"><b>${r.mins}′</b><span>专注时长</span></div>`;
+  parentBox.appendChild(stats);
+  parentBox.appendChild(el('div', 'chip', r.away ? `中途离开 ${r.away} 次（切走就算一次）` : '全程没切走过屏幕'));
+  if (!r.drill) parentBox.appendChild(el('div', 'chip', `${Math.round(r.sum / r.n * 100)}% 得分率 · 拼读 ${r.phOk ? '全对' : '有错'}`));
+  const ch = el('div', 'row');
+  r.changes.forEach(c => { ch.appendChild(el('div', 'chip', `${c.word} ${c.o}→${c.n}`)); });
+  parentBox.appendChild(el('div', 'mut', '今天动到的词（掌握度变化）'));
+  parentBox.appendChild(ch);
+  if (r.mins >= 7) parentBox.appendChild(el('div', 'chip', `今天玩了 ${r.mins} 分钟，去窗边看远处 20 秒再回来`));
+  panel.appendChild(parentBox);
+
+  const bParent = el('button', 'btn ghost sm', '家长看这里（数据）');
+  bParent.onclick = () => {
+    const on = parentBox.style.display === 'none';
+    parentBox.style.display = on ? 'flex' : 'none';
+    bParent.textContent = on ? '收起数据' : '家长看这里（数据）';
+    if (on) panel.scrollTop = panel.scrollHeight;
+  };
+  panel.appendChild(bParent);
+
+  const row = el('div', 'row');
+  const b1 = el('button', 'btn ghost', '回营地'); b1.onclick = () => go('camp');
+  const b2 = el('button', 'btn', '看词卡'); b2.onclick = () => go('cards');
+  row.appendChild(b1); row.appendChild(b2);
+  panel.appendChild(row);
+  wrap.appendChild(panel);
+
+  // 分级庆祝：三星两轮撒糖 + 两声叮；两星一轮 + 一声；一星只一声轻提示；零星不庆祝
+  if (!r.drill && r.stars > 0) {
+    const cx = window.innerWidth / 2, cy = window.innerHeight * 0.3;
+    const rounds = r.stars >= 3 ? 2 : 1;
+    for (let k = 0; k < rounds; k++) {
+      setTimeout(() => { sugarBurst(cx, cy); blip('ok'); }, 260 + k * 350);
+    }
+  }
+}
+
+/* ================= P11 果冻图鉴 ================= */
+const JELLY_NAMES = ['草莓', '橘子', '柠檬', '青柠', '薄荷', '青提', '苏打', '蓝莓', '葡萄', '桑葚', '蜜桃', '焦糖'];
+const JELLY_COLORS = ['#FF97B4', '#FFB259', '#FFE066', '#C6F16B', '#7CE0C0', '#A8E05F', '#7FD3FF', '#86A8FF', '#C39BFF', '#B07BD8', '#FFC2B0', '#D8A46B'];
+const RARE_INFO = {
+  rare_fire: { n: '火焰果冻', c: '#FF7A3D', how: '把营火养到第 5 级' },
+  rare_rescue: { n: '守护果冻', c: '#6FD3A8', how: '累计救回 10 只小鸭' },
+  rare_gold: { n: '金边果冻', c: '#FFC93C', how: '拿到 1 张金边贴纸' }
+};
+function jellyName(id) {
+  if (RARE_INFO[id]) return RARE_INFO[id].n;
+  const n = parseInt(String(id).slice(1), 10);
+  return (JELLY_NAMES[n - 1] || '神秘') + '果冻';
+}
+/* 果冻插画：u01..u12 → j01..j12，稀有果冻同名 */
+function jellyPic(id, px) {
+  const n = parseInt(String(id).slice(1), 10);
+  const file = RARE_INFO[id] ? id : 'j' + pad2(n);
+  const im = el('img', 'jellyPic');
+  im.src = AV(`assets/ui/jelly/${file}.webp`);
+  im.alt = jellyName(id);
+  if (px) { im.style.width = px + 'px'; im.style.height = px + 'px'; }
+  return im;
+}
+function jellyCell(id, locked, how, color, faceTxt) {
+  const cell = el('div', 'jellyCell' + (locked ? ' locked' : ''));
+  cell.appendChild(jellyPic(id));
+  cell.appendChild(el('div', 'jellyName', locked ? '？？？' : jellyName(id)));
+  cell.appendChild(el('div', 'mut jellyHow', locked ? how : '已收集'));
+  if (!locked) {
+    cell.onclick = () => { blip('ok'); cell.classList.add('popJelly'); setTimeout(() => cell.classList.remove('popJelly'), 500); };
+  }
+  return cell;
+}
+function viewJelly(wrap) {
+  const head = el('div', 'row');
+  head.appendChild(el('div', 'h1', `果冻图鉴 · ${S.jelly.length}/15`));
+  const bBack = el('button', 'btn sm ghost', '回营地'); bBack.onclick = () => go('camp');
+  head.appendChild(bBack);
+  wrap.appendChild(head);
+  const grid = el('div', 'jellyGrid');
+  for (let u = 1; u <= 12; u++) {
+    const id = unitKey(u);
+    grid.appendChild(jellyCell(id, !S.jelly.includes(id), u === 1 ? 'U1 一星就送（起步）' : `U${u} 三星`, JELLY_COLORS[u - 1]));
+  }
+  // 稀有果冻：锁定态显示当前进度，让孩子看到“还差多少”，而不是一句遥远的条件
+  const fireLv = Math.min(5, Math.floor((S.fire || 0) / 6) + 1);
+  const goldN = S.stickers.filter(s => s.gold).length;
+  const prog = { rare_fire: `营火 ${fireLv}/5 级`, rare_rescue: `救回 ${S.rescued || 0}/10 只`, rare_gold: `金边贴纸 ${goldN}/1 张` };
+  const faces = { rare_fire: '🔥', rare_rescue: '🛡', rare_gold: '✨' };
+  Object.keys(RARE_INFO).forEach(id => {
+    const info = RARE_INFO[id];
+    const locked = !S.jelly.includes(id);
+    grid.appendChild(jellyCell(id, locked, locked ? `${prog[id]}（${info.how}）` : info.how, info.c, faces[id]));
+  });
+  wrap.appendChild(grid);
+  wrap.appendChild(el('div', 'mut', '解锁条件都是“做到了就给”，没有抽奖、没有概率。'));
+}
+
+/* ================= P05 昨日回声 ================= */
+function viewEcho(wrap) {
+  const panel = el('div', 'panel rpWrap');
+  panel.appendChild(el('div', 'h1', '把小鸭找回来'));
+  if (!S.echo.length) {
+    panel.classList.add('emptyEcho');
+    const im = el('img', 'echoDuck'); im.src = DUCK.cheer; im.alt = '小鸭';
+    panel.appendChild(im);
+    panel.appendChild(el('div', 'mut', '现在没有躲起来的词。答错过的词会自动跑到这里。'));
+    const b = el('button', 'btn', '回营地'); b.onclick = () => go('camp'); panel.appendChild(b);
+    wrap.appendChild(panel); return;
+  }
+  panel.appendChild(el('div', 'mut', `有 ${S.echo.length} 个词在躲着，点一个听一遍、说一遍`));
+  const grid = el('div', 'cardGrid');
+  grid.style.gridTemplateColumns = 'repeat(6,1fr)';
+  grid.style.maxHeight = '48vh';
+  S.echo.forEach(e => {
+    const u = parseInt(e.u.slice(1), 10);
+    const d = el('div', 'wc');
+    d.style.backgroundImage = `url("${IMG(unitKey(u), U(u).words.indexOf(e.w))}")`;
+    const im = el('img', 'duckLost'); im.src = DUCK.sit;
+    d.appendChild(im);
+    d.onclick = () => { sayWord(e.id, e.w); blip('ok'); };
+    grid.appendChild(d);
+  });
+  panel.appendChild(grid);
+  const row = el('div', 'row');
+  const b1 = el('button', 'btn green', '考一遍（3 题）'); b1.onclick = () => startEchoQuiz();
+  const b2 = el('button', 'btn ghost', '回营地'); b2.onclick = () => go('camp');
+  row.appendChild(b1); row.appendChild(b2);
+  panel.appendChild(row);
+  wrap.appendChild(panel);
+}
+function startEchoQuiz() {
+  const list = S.echo.slice(0, 4);
+  SES = { u: parseInt(list[0].u.slice(1), 10), wi: 1, dk: 'D4', key: 'echo_' + todayStr(), qs: [], isEcho: true };
+  list.forEach(e => {
+    const u = parseInt(e.u.slice(1), 10);
+    SES.qs.push({ t: 'T3', word: e.w, id: e.id, echoUnit: u });
+  });
+  QI = 0; RES = [];
+  go('quiz');
+}
+
+/* ================= P02 路线总览 ================= */
+function viewRoute(wrap) {
+  const c = ctxToday();
+  const u = P.u || c.u;
+  const uk = unitKey(u);
+  const unit = U(u);
+  const head = el('div', 'row');
+  head.appendChild(el('div', 'h1', `${u} 号营地 · ${unit.title}`));
+  head.appendChild(el('div', 'chip', `单元掌握度 ${unitMastery(u)}`));
+  head.appendChild(el('div', 'chip', `🏕 ${S.badges.length}/12`));
+  wrap.appendChild(head);
+
+  const strip = el('div', 'unitStrip');
+  for (let i = 1; i <= 12; i++) {
+    const b = el('div', 'uChip' + (i === u ? ' sel' : '') + (S.badges.includes(unitKey(i)) ? ' done' : ''), 'U' + i);
+    b.onclick = () => go('route', { u: i });
+    strip.appendChild(b);
+  }
+  wrap.appendChild(strip);
+
+  const grid = el('div', 'weekGrid');
+  grid.appendChild(el('div', '', '')); // 左上角空
+  DAYS.forEach(d => {
+    const nm = d.name.replace('关', '');
+    const day = nm.slice(0, 2), tag = nm.slice(2);       // 「周四复习」拆成「周四 / 复习」两行
+    const h = el('div', 'dayHd');
+    h.innerHTML = `<b>${day}</b>${tag ? `<i>${tag}</i>` : ''}`;
+    grid.appendChild(h);
+  });
+  const unlockedOk = (wi, dk) => {
+    const key = `${uk}_w${wi}_${dk}`;
+    if (dk === 'D1') return true;
+    const idx = DAYS.findIndex(d => d.k === dk);
+    return !!S.stars[`${uk}_w${wi}_${DAYS[idx - 1].k}`] || !!S.stars[key] || wi < c.wi || (wi === c.wi && dk === c.dk);
+  };
+  for (let wi = 1; wi <= 4; wi++) {
+    const lab = el('div', 'h2', `第 ${wi} 周`);
+    lab.style.fontSize = 'clamp(13px,1.5vw,18px)';
+    grid.appendChild(lab);
+    DAYS.forEach(d => {
+      const key = `${uk}_w${wi}_${d.k}`;
+      const rec = S.stars[key];
+      const ok = unlockedOk(wi, d.k);
+      const isBoss = wi === 4 && d.k === 'D6';
+      const n = el('div', 'node' + (ok ? '' : ' lock') + (isBoss ? ' boss' : ''));
+      if (isBoss) n.textContent = 'BOSS';
+      else if (rec) n.appendChild(el('span', 'st', '★'.repeat(rec.stars)));
+      n.title = `${d.name} · ${key}${rec ? ' · ' + rec.stars + ' 星' : ''}`;
+      if (ok) n.onclick = () => startSession(u, wi, d.k);
+      grid.appendChild(n);
+    });
+  }
+  wrap.appendChild(grid);
+  wrap.appendChild(el('div', 'mut', '前面的关只要当天没来就算过去了，不补课、不倒扣；今天从第 ' + ctxToday().w + ' 周接着走。'));
+}
+
+/* ================= P09 我的词卡 ================= */
+let JUST_UP = null;   // 刚升档的卡片 id，用来播一次金光
+function viewCards(wrap) {
+  const c = ctxToday();
+  const u = P.u || c.u;
+  const uk = unitKey(u);
+  const unit = U(u);
+  const head = el('div', 'row');
+  head.appendChild(el('div', 'h1', `${u} 号营地 · ${unit.title}`));
+  head.appendChild(el('div', 'chip', `单元掌握度 ${unitMastery(u)}`));
+  const bDrill = el('button', 'btn sm', '勾选复习');
+  bDrill.onclick = () => openDrillPicker(u);
+  head.appendChild(bDrill);
+  wrap.appendChild(head);
+  const strip = el('div', 'unitStrip');
+  for (let i = 1; i <= 12; i++) {
+    const b = el('div', 'uChip' + (i === u ? ' sel' : '') + (S.badges.includes(unitKey(i)) ? ' done' : ''), `U${i}`);
+    b.onclick = () => go('cards', { u: i });
+    strip.appendChild(b);
+  }
+  wrap.appendChild(strip);
+  const grid = el('div', 'cardGrid');
+  const vis = visibleWords(u, c.dk);
+  vis.forEach(({ w, i }) => {
+    const m = mGet(idOf(u, w));
+    const inkKey = `${uk}_${pad3(i + 1)}`;
+    const d = el('div', 'wc ' + wordState(m) + (LOWINK.includes(inkKey) ? ' lowink' : '') + (JUST_UP && JUST_UP.id === idOf(u, w) ? ' justUp' : ''));
+    d.style.backgroundImage = `url("${IMG(uk, i)}")`;
+    d.appendChild(el('div', 'mast'));
+    d.onclick = () => openWordCard(u, i, w);
+    grid.appendChild(d);
+  });
+  wrap.appendChild(grid);
+  if (vis.length < unit.words.length) {
+    wrap.appendChild(el('div', 'mut', `现在只显示已经学到的 ${vis.length} 个词；后面的词等课上到再出现（不想限制可在设置里关掉「只出已经学过的词」）。`));
+  }
+  const legend = el('div', 'row');
+  legend.innerHTML = `<div class="chip">左上圆点＝练到哪一档：灰 还没练 / 黄 练过几次 / 绿 快熟了 / 金 很熟</div><div class="chip">暖色描边＝这张图本身是灰白线稿</div>`;
+  wrap.appendChild(legend);
+  wrap.appendChild(el('div', 'mut', '点卡片：先让孩子读一遍，再听音核对，你点一档，掌握度就会更新。'));
+  if (JUST_UP) {
+    const lv = JUST_UP.level;
+    setTimeout(() => { JUST_UP = null; }, 50);   // 只播一次
+    setTimeout(() => { blip('ok'); }, 300);
+    wrap.appendChild(el('div', 'chip', lv === 'gold' ? '这张卡镀金啦！' : '这张卡变全彩啦！'));
+  }
+}
+
+/* 家长勾选复习清单：勾几个词，练 6 题（不评星，只更新掌握度） */
+function openDrillPicker(u) {
+  const unit = U(u), uk = unitKey(u);
+  const keep = S.drill && S.drill.u === u ? (S.drill.words || []) : [];
+  const sel = new Set(keep);
+  const ov = el('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(70,50,35,.45);display:flex;align-items:center;justify-content:center;z-index:96';
+  const foot = $('#foot'), footDisp = foot ? foot.style.display : '';
+  const closeOv = () => { ov.remove(); if (foot) foot.style.display = footDisp || 'flex'; };
+  if (foot) foot.style.display = 'none';   // 弹层期间收起底栏，避免被压在下面/穿帮
+  const box = el('div', 'panel');
+  box.style.cssText = 'width:min(980px,94vw);max-height:92vh;overflow:auto;padding:2vh 2vw;display:flex;flex-direction:column;gap:1.2vh';
+  box.appendChild(el('div', 'h1', '勾选今天要复习的词'));
+  box.appendChild(el('div', 'mut', '灰的和半彩的建议优先。勾 3 个以上，就能生成 6 道看图说词／看词读出。'));
+  const grid = el('div', 'drillGrid');
+  const cnt = el('div', 'chip', '已勾 0 个');
+  const vis = visibleWords(u, ctxToday().dk);
+  vis.forEach(({ w, i }) => {
+    const m = mGet(idOf(u, w));
+    const d = el('div', 'wc drillCell ' + wordState(m) + (sel.has(w) ? ' on' : ''));
+    d.style.backgroundImage = `url("${IMG(uk, i)}")`;
+    d.appendChild(el('i', '', w));
+    d.appendChild(el('b', 'tick', '✓'));
+    d.onclick = () => {
+      if (sel.has(w)) { sel.delete(w); d.classList.remove('on'); }
+      else { sel.add(w); d.classList.add('on'); }
+      cnt.textContent = `已勾 ${sel.size} 个`;
+    };
+    grid.appendChild(d);
+  });
+  box.appendChild(cnt);
+  box.appendChild(grid);
+  const row = el('div', 'row');
+  const bAll = el('button', 'btn sm ghost', '全选');
+  bAll.onclick = () => { vis.forEach(({ w }) => sel.add(w)); [...grid.children].forEach(c => c.classList.add('on')); cnt.textContent = `已勾 ${sel.size} 个`; };
+  const bNone = el('button', 'btn sm ghost', '清空');
+  bNone.onclick = () => { sel.clear(); [...grid.children].forEach(c => c.classList.remove('on')); cnt.textContent = '已勾 0 个'; };
+  const bGo = el('button', 'btn sm', '开始练这 6 题');
+  bGo.onclick = () => {
+    const words = unit.words.filter(w => sel.has(w));
+    if (!words.length) { alert('先勾几个词再开始。'); return; }
+    S.drill = { u, words, ts: todayStr() }; save();
+    ov.remove(); startDrill(u, words);
+  };
+  const bClose = el('button', 'btn sm ghost', '关闭');
+  bClose.onclick = closeOv;
+  row.appendChild(bAll); row.appendChild(bNone); row.appendChild(bGo); row.appendChild(bClose);
+  box.appendChild(row);
+  ov.appendChild(box);
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+/* 词卡「读一遍」弹层 */
+function openWordCard(u, i, w) {
+  const uk = unitKey(u), id = idOf(u, w);
+  const ov = el('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(70,50,35,.42);display:flex;align-items:center;justify-content:center;z-index:90';
+  const foot = $('#foot'), footDisp = foot ? foot.style.display : '';
+  if (foot) foot.style.display = 'none';
+  const closeOv = () => { ov.remove(); if (foot) foot.style.display = footDisp || 'flex'; };
+  const box = el('div', 'panel');
+  box.style.cssText = 'width:min(560px,86vw);padding:2.4vh 2vw;display:flex;flex-direction:column;align-items:center;gap:1.2vh';
+  const im = el('div', 'qImg');
+  im.style.backgroundImage = `url("${IMG(uk, i)}")`;
+  box.appendChild(im);
+  const wl = el('div', 'h1', w);
+  wl.style.fontSize = '6vh';
+  box.appendChild(wl);
+  const hear = el('button', 'btn sm ghost', '听发音');
+  hear.onclick = () => sayWord(id, w);
+  box.appendChild(hear);
+  const asks = el('div', 'sayRow');
+  [['g', '说出来了', 'ok'], ['y', '提示后', 'hint'], ['r', '没说', 'no']].forEach(([c, label, code]) => {
+    const b = el('div', 'sayBtn ' + c, label);
+    b.onclick = () => {
+      const g0 = document.querySelector('.cardGrid');
+      const top = g0 ? g0.scrollTop : 0;
+      const before = mGet(id);
+      mSet(id, credit(code), todayStr()); save();
+      const after = mGet(id);
+      // 跨档升级（进 full / gold）才播仪式，避免每次点都闪
+      const rank = s => (s === 'gold' ? 3 : s === 'full' ? 2 : s === 'half' ? 1 : 0);
+      if (rank(wordState(after)) > rank(wordState(before)) && rank(wordState(after)) >= 2) {
+        JUST_UP = { id, level: wordState(after) };
+        blip('ok'); sugarBurst(window.innerWidth / 2, window.innerHeight * 0.45);
+      }
+      ov.remove(); render();
+      const g1 = document.querySelector('.cardGrid');
+      if (g1) g1.scrollTop = top;
+    };
+    asks.appendChild(b);
+  });
+  box.appendChild(asks);
+  const close = el('button', 'btn sm ghost', '关闭');
+  close.onclick = closeOv;
+  box.appendChild(close);
+  ov.appendChild(box);
+  ov.onclick = e => { if (e.target === ov) closeOv(); };
+  document.body.appendChild(ov);
+}
+
+/* 家长英语不好也能用：让游戏把词慢慢读一遍，孩子跟读，家长只负责点按钮 */
+function gameHintRow(q, card) {
+  const row = el('div', 'row');
+  const b = el('button', 'btn sm', '🔊 游戏提示（慢慢听）');
+  const tip = el('div', 'chip hintTip');
+  tip.style.display = 'none';
+  tip.textContent = '跟着读一遍，再点「提示后」';
+  b.onclick = () => {
+    sayWord(q.id, q.word, 0.56);
+    blip('hint');
+    tip.style.display = 'flex';
+  };
+  row.appendChild(b); row.appendChild(tip);
+  return row;
+}
+
+/* 句型四步怎么玩：当前在哪一步就点亮哪一步 */
+function openSentenceGuide(mode) {
+  const cur = { g1: 1, g1p: 2, g2: 3, g3: 4 }[mode] || 1;
+  const rows = [
+    { t: '① 听整句', d: '先点「只读这一句」，听 1～2 遍，不用跟读，先听清。' },
+    { t: '② 指词读', d: '点句子里的每个词，点一个听一个；再点「跟着手指听一遍」，词会一个接一个亮起来。' },
+    { t: '③ 挖空', d: '句尾有个虚线「?」，听完整句后自己把那个词补出来；想不出就点「给点提示」，先给首音、再给前半词、最后才给答案。' },
+    { t: '④ 替换', d: '点下面的大词卡，把虚线空格换成同句型另一句里的说法（比如 a duck → an ant）。换完还是通顺的英文，跟着读一遍。' }
+  ];
+  const body = rows.map((r, i) => ({
+    t: (i + 1 === cur ? '▶ ' : '') + r.t + (i + 1 === cur ? '（你现在在这步）' : ''),
+    d: r.d
+  }));
+  body.push({ d: '顺序不强制：听熟了可以直接跳到 ③ 或 ④。这一步不打分、不进星星。' });
+  openGuide('句型回声怎么玩', body);
+}
+
+
+function openGuide(title, rows, onClose) {
+  const ov = el('div', 'guideOv');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(70,50,35,.45);display:flex;align-items:center;justify-content:center;z-index:96;padding:3vh 3vw';
+  const foot = $('#foot'), footDisp = foot ? foot.style.display : '';
+  if (foot) foot.style.display = 'none';
+  const closeOv = () => { ov.remove(); if (foot) foot.style.display = footDisp || 'flex'; if (onClose) onClose(); };
+  const box = el('div', 'panel');
+  box.style.cssText = 'width:min(680px,92vw);max-height:88vh;overflow:auto;padding:2.4vh 2.2vw;display:flex;flex-direction:column;gap:1.2vh';
+  box.appendChild(el('div', 'h1', title));
+  rows.forEach(r => {
+    const line = el('div', 'mut');
+    line.style.textAlign = 'left';
+    line.innerHTML = r.t ? `<b>${r.t}</b>　${r.d}` : r.d;
+    box.appendChild(line);
+  });
+  const close = el('button', 'btn', '知道了');
+  close.onclick = closeOv;
+  box.appendChild(close);
+  ov.appendChild(box);
+  ov.onclick = e => { if (e.target === ov) closeOv(); };
+  document.body.appendChild(ov);
+}
+
+/* 家长判定标准：T3/T4 三个按钮到底怎么点 */
+function openJudgeGuide() {
+  openGuide('这三个按钮怎么点', [
+    { t: '英语不好也能判', d: '你不用自己会读。孩子卡住时，点卡片上的「🔊 游戏提示（慢慢听）」，让游戏把词慢慢读一遍，孩子跟着读——这就算「提示后」。' },
+    { t: '说出来了', d: '没点提示，3 秒内自己读出来。发音不完美也算，只要是他自己认出来的。' },
+    { t: '提示后', d: '点了「游戏提示」，或你提醒了一下，他才读出来。' },
+    { t: '没说', d: '提示了还是不出声，或者读成了别的词。' },
+    { d: '拿不准就点「提示后」——宁可记低一点，下次还会再练到。点错了 3 秒内可以撤销。' },
+    { d: '听音选词那一题不看发音，只记“选对/没选对”，不用纠结。' }
+  ]);
+}
+
+
+function openBackupCode() {
+  const ov = el('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(70,50,35,.45);display:flex;align-items:center;justify-content:center;z-index:95';
+  const foot = $('#foot'), footDisp = foot ? foot.style.display : '';
+  if (foot) foot.style.display = 'none';
+  const closeOv = () => { ov.remove(); if (foot) foot.style.display = footDisp || 'flex'; };
+  const box = el('div', 'panel');
+  box.style.cssText = 'width:min(760px,90vw);max-height:90vh;overflow:auto;padding:2.2vh 2vw;display:flex;flex-direction:column;gap:1.2vh';
+  box.appendChild(el('div', 'h1', '备份码'));
+  box.appendChild(el('div', 'mut', '整段复制，粘到记事本/微信收藏里存好。换设备或清了缓存，把它粘回来点「恢复」即可。'));
+  const ta = el('textarea');
+  ta.style.cssText = 'width:100%;height:26vh;font-family:ui-monospace,monospace;font-size:12px;line-height:1.5;border-radius:12px;border:2px solid #E7D6BE;padding:10px;background:#fff;resize:vertical';
+  ta.value = JSON.stringify(S);
+  box.appendChild(ta);
+  const row = el('div', 'row');
+  const bSel = el('button', 'btn sm', '全选复制');
+  bSel.onclick = () => { ta.focus(); ta.select(); try { navigator.clipboard.writeText(ta.value); } catch (e) { } bSel.textContent = '已选中，按 Ctrl+C'; };
+  const bRestore = el('button', 'btn sm ghost', '恢复');
+  bRestore.onclick = () => {
+    try {
+      const o = JSON.parse(ta.value);
+      if (!o || !o.mastery || !o.start) throw new Error('bad');
+      if (!confirm('用这段备份覆盖当前进度？')) return;
+      S = Object.assign(defState(), o); S.lastBackup = todayStr(); save();
+      ov.remove(); alert('恢复成功。'); render();
+    } catch (e) { alert('这段文字不是本游戏的备份码。'); }
+  };
+  const bClose = el('button', 'btn sm ghost', '关闭');
+  bClose.onclick = closeOv;
+  row.appendChild(bSel); row.appendChild(bRestore); row.appendChild(bClose);
+  box.appendChild(row);
+  ov.appendChild(box);
+  ov.onclick = e => { if (e.target === ov) closeOv(); };
+  document.body.appendChild(ov);
+}
+
+/* ================= 认词小站（sight words：听音选词卡） ================= */
+/* 易混组：干扰项只从同组里出，否则孩子靠“长得完全不一样”就能排除，测不到辨形 */
+const SIGHT_GROUPS = [
+  ['the', 'this', 'is', 'it'],
+  ['he', 'she', 'i', 'my'],
+  ['what', 'where', 'you', 'yes'],
+  ['a', 'can', 'do', 'to'],
+  ['some', 'like', 'see', 'are']
+];
+function sightDistractors(target) {
+  const g = SIGHT_GROUPS.find(x => x.includes(target));
+  const same = g ? g.filter(w => w !== target) : [];
+  if (same.length >= 3) return same.slice(0, 3);
+  // 兜底：同首字母或同长度优先
+  const alt = SIGHT.filter(w => w !== target && !same.includes(w));
+  const score = w => (w.slice(0, 1) === target.slice(0, 1) ? 2 : 0) + (w.length === target.length ? 1 : 0);
+  const picked = alt.slice().sort((a, b) => score(b) - score(a)).slice(0, 3 - same.length);
+  return same.concat(picked);
+}
+function viewSight(wrap) {
+  const N = 6;
+  let round = 0, firstOk = 0, errThis = 0, t0 = Date.now();
+  const pool = shuffle(SIGHT, Date.now() % 9999);
+  const panel = el('div', 'panel');
+  panel.style.width = 'min(1000px,94vw)'; panel.style.padding = '2.4vh 2vw';
+  panel.style.display = 'flex'; panel.style.flexDirection = 'column'; panel.style.gap = '1.4vh'; panel.style.alignItems = 'center';
+  panel.appendChild(el('div', 'h1', '认词小站'));
+  panel.appendChild(el('div', 'mut', '只给文字卡、不给图。听清发音，点出对应的那张卡。家长在旁边念一遍规则就行，不用判分。'));
+  wrap.appendChild(panel);
+
+  const box = el('div', 'sightBox');
+  panel.appendChild(box);
+
+  function ask() {
+    if (round >= N) return done();
+    errThis = 0;
+    const target = pool[round % pool.length];
+    const others = sightDistractors(target);
+    const opts = shuffle([target].concat(others), round + 7);
+    box.innerHTML = '';
+    const bar = el('div', 'row');
+    bar.appendChild(el('div', 'chip', `第 ${round + 1} / ${N} 张`));
+    const hear = el('button', 'btn sm', '再听一次');
+    hear.onclick = () => sayAudio(`assets/audio/sight/${target}.mp3`, target);
+    bar.appendChild(hear);
+    box.appendChild(bar);
+    const g = el('div', 'sightGrid');
+    let locked = false;
+    opts.forEach(o => {
+      const c = el('div', 'sightCard', o);
+      c.onclick = () => {
+        if (locked) return;
+        if (o === target) {
+          locked = true;
+          c.classList.add('ok');
+          blip('ok'); sugarBurst(window.innerWidth / 2, window.innerHeight / 2);
+          sayAudio(`assets/audio/sight/${target}.mp3`, target);
+          if (!errThis) firstOk++;
+          setTimeout(() => { round++; ask(); }, 700);
+        } else {
+          errThis++;
+          c.classList.add('no'); c.style.opacity = '.4'; c.onclick = null;
+          blip('hint');
+        }
+      };
+      g.appendChild(c);
+    });
+    box.appendChild(g);
+    laterOnPage(() => sayAudio(`assets/audio/sight/${target}.mp3`, target), 150);
+  }
+
+  function done() {
+    const mins = Math.max(1, Math.round((Date.now() - t0) / 60000));
+    const indep = Math.round(firstOk / N * 100);
+    box.innerHTML = '';
+    box.appendChild(el('div', 'h1', firstOk >= N - 1 ? '这些小家伙都认出来了' : '认出来一半，多听两遍'));
+    box.appendChild(el('div', 'mut', `${N} 张卡，第一次就认对 ${firstOk} 张（${indep}%），用时 ${mins} 分钟`));
+    const row = el('div', 'row');
+    const b1 = el('button', 'btn', '再来一轮'); b1.onclick = () => go('sight');
+    const b2 = el('button', 'btn ghost', '回营地'); b2.onclick = () => go('camp');
+    row.appendChild(b1); row.appendChild(b2);
+    box.appendChild(row);
+    S.sight = S.sight || [];
+    S.sight.push({ ts: todayStr(), firstOk, n: N });
+    S.meas = S.meas || [];
+    S.meas.push({ ts: todayStr(), key: 'sight', drill: true, mins, indep, away: 0, stars: null });
+    save();
+  }
+
+  ask();
+}
+
+/* 句子分词：保留标点，供句型页逐词显示 */
+function sentTokens(t) { return String(t).replace(/—/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean); }
+/* 同一句型三条例句对比：算出共同前缀/后缀，中间那段就是“可以替换的部分”。
+   这样 ④ 替换只给“同句型里真实出现过的说法”，不会拼出 It has girl 这种错句。 */
+function sentAlign(exs) {
+  const toks = exs.map(sentTokens);
+  const core = s => String(s).replace(/[.,!?'’]/g, '').toLowerCase();
+  const base = toks[0];
+  const n = Math.min.apply(null, toks.map(t => t.length));
+  let p = 0;
+  while (p < n && toks.every(t => core(t[p]) === core(base[p]))) p++;
+  let s = 0;
+  while (s < n - p && toks.every(t => core(t[t.length - 1 - s]) === core(base[base.length - 1 - s]))) s++;
+  return {
+    p, s, toks,
+    slots: toks.map(t => t.slice(p, t.length - s).join(' ')),
+    slotText: toks.map(t => t.slice(p, t.length - s).join(' ').replace(/[.,!?]$/, ''))
+  };
+}
+
+/* ================= P10 句型回声 ================= */
+function viewSentence(wrap) {
+  const c = ctxToday();
+  const u = P.u || c.u, wi = P.wi || c.wi;
+  const unit = U(u);
+  if (!unit.sentences || !unit.sentences.length) {
+    const paper = el('div', 'paper');
+    paper.appendChild(el('div', 'h1', `${u} 号营地还没有句型卡`));
+    paper.appendChild(el('div', 'mut', 'U7 之后的单元只练单词和拼读，句型先不要求。'));
+    const b = el('button', 'btn', '回到营地');
+    b.onclick = () => go('camp');
+    paper.appendChild(b);
+    wrap.appendChild(paper);
+    return;
+  }
+  const nSent = unit.sentences.length;
+  const gidx = P.gi == null ? (wi - 1) % nSent : Math.max(0, Math.min(nSent - 1, P.gi));
+  const s = unit.sentences[gidx];
+  const sent = s.ex[0].replace(/—/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = sentTokens(sent);
+  const mode = P.mode || 'g1';
+  const align = sentAlign(s.ex);                 // 三条例句对齐后的“可替换段”
+  const slotStart = align.p, slotEnd = words.length - align.s;
+  const paper = el('div', 'paper');
+  paper.appendChild(el('div', 'mut', `${u} 号营地 · 句型回声 · 第 ${gidx + 1}/${unit.sentences.length} 组`));
+  const line = el('div', 'sentLine');
+  const spans = [];
+  // 功能词（it / is / a / not）挖空没意义，只在实词里挑空
+  const FUNC = /^(it'?s?|is|are|am|a|an|the|and|or|not|no|i|you|we|they|he|she|has|have|do|does|can|this|that|my|your|his|her)$/i;
+  const blanks = words.map((w, i) => i).filter(i => !FUNC.test(words[i].replace(/[^A-Za-z']/g, '')));
+  // ③ 挖空：每次进来随机挑一个实词，不再固定挖最后一个
+  let blankIdx = blanks.length ? blanks[Math.floor(Math.random() * blanks.length)] : words.length - 1;
+  if (P.blank != null && mode === 'g2') blankIdx = P.blank;
+  const showBlank = (mode === 'g2' || mode === 'g3');
+  let slotSpan = null;
+  words.forEach((w, i) => {
+    const inSlot = mode === 'g3' && i >= slotStart && i < slotEnd;
+    if (inSlot) {
+      // ④ 替换：整段可替换部分合成一个虚线空格（可能是 a duck / a trunk 这样的短语）
+      if (i === slotStart) {
+        // 虚线里先放原句的说法（如 a duck），孩子知道整句长什么样，再换别的
+        slotSpan = el('span', 'w blank', align.slotText[0]);
+        line.appendChild(slotSpan);
+        spans.push(slotSpan);
+      } else spans.push(null);
+      return;
+    }
+    const isBlank = mode === 'g2' && i === blankIdx;
+    const sp = el('span', 'w' + (isBlank ? ' blank' : ''), isBlank ? '?' : w);
+    if (mode === 'g1p') {                       // 指词朗读：点哪个词读哪个词
+      sp.style.cursor = 'pointer';
+      sp.onclick = () => { sayWordIn(u, w); sp.classList.add('done', 'hot'); };
+    }
+    line.appendChild(sp); spans.push(sp);
+  });
+  paper.appendChild(line);
+
+  const tabs = el('div', 'hintRow');
+  [['g1', '① 听整句'], ['g1p', '② 指词读'], ['g2', '③ 挖空'], ['g3', '④ 替换']].forEach(([k, n]) => {
+    const t = el('div', 'tag' + (mode === k ? ' on' : ''), n);
+    t.onclick = () => go('sentence', { u, wi, mode: k, blank: P.blank, gi: gidx });
+    tabs.appendChild(t);
+  });
+  paper.appendChild(tabs);
+  const helpRow = el('div', 'hintRow');
+  const bGuide = el('button', 'btn sm ghost', '句型怎么玩？');
+  bGuide.onclick = () => openSentenceGuide(mode);
+  helpRow.appendChild(bGuide);
+  paper.appendChild(helpRow);
+  // 第一次进句型页自动讲一遍四步，之后再问就看按钮
+  if (!S.sentGuide) { S.sentGuide = true; save(); setTimeout(() => { if (VIEW === 'sentence') openSentenceGuide(mode); }, 500); }
+
+  const ctr = el('div', 'hintRow');
+  if (mode === 'g1' || mode === 'g1p') {
+    const b = el('button', 'btn sm', '跟着手指听一遍');
+    b.onclick = () => playWords(u, words, spans, mode === 'g1p');
+    ctr.appendChild(b);
+    const b2 = el('button', 'btn sm ghost', '只读这一句');
+    b2.onclick = () => saySent(u, gidx, 0, sent, 0.82);
+    ctr.appendChild(b2);
+  }
+  if (mode === 'g2') {
+    let helped = 0;
+    const hintChip = el('div', 'chip');
+    hintChip.style.display = 'none';
+    const b1 = el('button', 'btn sm', '再听整句');
+    b1.onclick = () => saySent(u, gidx, 0, sent, 0.82);
+    ctr.appendChild(b1);
+    const b2 = el('button', 'btn sm ghost', '给点提示');
+    b2.onclick = () => {
+      helped++;
+      const w = words[blankIdx];
+      hintChip.style.display = 'flex';
+      if (helped === 1) hintChip.textContent = `首音 /${w.slice(0, 1)}/ …`;          // 一级：只给首音
+      else if (helped === 2) hintChip.textContent = `${w.slice(0, Math.ceil(w.length / 2))}…`;  // 二级：给前半个词
+      else hintChip.textContent = `最后一个字：${w}（下次自己先试试）`;                  // 三级才给答案
+    };
+    ctr.appendChild(b2);
+    const b3 = el('button', 'btn sm ghost', '换个空');
+    if (blanks.length > 1) {
+      b3.onclick = () => {
+        const at = blanks.indexOf(blankIdx);
+        const nextIdx = blanks[(at + 1) % blanks.length] != null ? blanks[(at + 1) % blanks.length] : blanks[0];
+        go('sentence', { u, wi, mode: 'g2', blank: nextIdx, gi: gidx });
+      };
+      ctr.appendChild(b3);
+    }
+    ctr.appendChild(hintChip);
+    paper.appendChild(el('div', 'mut', '先听整句，再自己补空；想不出就点“给点提示”，一级一级来'));
+  }
+  if (mode === 'g3') {
+    const chips = el('div', 'wordPick');
+    // 只给“同句型其它例句里真实出现过的说法”，书上的原句，保证语义通顺；
+    // 不再从整个单元随便抽词，避免 It has girl 这种错句。
+    const alts = align.slotText.slice(1).filter(x => x && x !== align.slotText[0]);
+    alts.forEach(ph => {
+      const t = el('div', 'pickWord', ph);
+      t.onclick = () => {
+        if (!slotSpan) return;
+        slotSpan.textContent = ph;
+        slotSpan.classList.remove('blank');
+        slotSpan.classList.add('hot');
+        // 换成新句子后，用系统发音把整句读一遍（原句 mp3 对不上改过的句子）
+        const punct = (align.slots[0].match(/[.,!?]$/) || [''])[0];
+        const newSent = align.toks[0].slice(0, slotStart).join(' ') + ' ' + ph + punct +
+          (slotEnd < align.toks[0].length ? ' ' + align.toks[0].slice(slotEnd).join(' ') : '');
+        say(newSent.replace(/\s+([.,!?])/g, '$1'), 0.8);
+      };
+      chips.appendChild(t);
+    });
+    paper.appendChild(el('div', 'mut', '点一张卡，把虚线空格换成这句话里的说法；换完还是一句对的英文，跟着读一遍'));
+    paper.appendChild(chips);
+    if (!alts.length) paper.appendChild(el('div', 'mut', '这组句型只有一种说法，暂时没有可替换的例句。'));
+  }
+  paper.appendChild(ctr);
+  // 句型不打分：只记录“做到哪一步”，所以用记录语义，不用评分语义
+  const judge = el('div', 'sayRow');
+  const picked = el('div', 'chip');
+  picked.style.display = 'none';
+  [['g', '我做到了', 'g'], ['hint', '再听一遍', 'y']].forEach(([k, n, cls]) => {
+    const b = el('div', 'sayBtn ' + cls, n);
+    b.onclick = () => {
+      blip(k === 'g' ? 'ok' : 'hint');
+      judge.querySelectorAll('.sayBtn').forEach(x => { x.style.opacity = '.45'; });
+      b.style.opacity = '1';
+      picked.style.display = 'flex';
+      picked.textContent = k === 'g' ? '记下了：这一步做到了' : '好，再来一遍这句';
+      if (k === 'hint') saySent(u, gidx, 0, sent, 0.82);
+    };
+    judge.appendChild(b);
+  });
+  paper.appendChild(el('div', 'mut', '句型不打分、不进星星，这里只是记录今天做到哪一步'));
+  paper.appendChild(judge);
+  paper.appendChild(picked);
+  // 句型页原来只能看本周那 1 组，没有“下一组”，孩子想多练只能退出；这里补上前后组切换
+  if (nSent > 1) {
+    const nav = el('div', 'hintRow');
+    const prev = el('button', 'btn sm ghost', '← 上一组');
+    prev.onclick = () => go('sentence', { u, wi, mode, gi: (gidx - 1 + nSent) % nSent });
+    const next = el('button', 'btn sm', `下一组（${(gidx + 1) % nSent + 1}/${nSent}）→`);
+    next.onclick = () => go('sentence', { u, wi, mode, gi: (gidx + 1) % nSent });
+    nav.appendChild(prev); nav.appendChild(next);
+    paper.appendChild(nav);
+  }
+  wrap.appendChild(paper);
+  if (mode === 'g1') { const ps = PAGE_SEQ; setTimeout(() => { if (ps === PAGE_SEQ) playWords(u, words, spans, false); }, 350); }
+  // 挖空必须先有原音输入：进来就整句播一遍，再让孩子填
+  if (mode === 'g2') { const ps = PAGE_SEQ; setTimeout(() => { if (ps === PAGE_SEQ) saySent(u, gidx, 0, sent, 0.82); }, 400); }
+}
+function playWords(u, words, spans, tapMode) {
+  stopAudio();
+  // 先把整句要用的词音全部预加载，避免读到最后一个词才开始下载
+  const unit = U(u);
+  words.forEach(w => {
+    const clean = String(w).replace(/[^A-Za-z']/g, '');
+    const i = unit.words.indexOf(clean);
+    if (i >= 0) preloadAudio(`assets/audio/words/${unitKey(u)}_${pad3(i + 1)}.mp3`);
+  });
+  const seq = AUDIO_SEQ;
+  let i = 0;
+  const step = () => {
+    if (seq !== AUDIO_SEQ) return;      // 已经切页/切题，停止这条朗读链
+    spans.forEach(s => s.classList.remove('hot', 'done'));
+    if (i >= words.length) { spans.forEach(s => s.classList.remove('hot')); return; }
+    spans[i].classList.add('hot');
+    if (tapMode) spans[i].classList.add('done');
+    const w = words[i];
+    i++;
+    let moved = false;
+    const next = () => {
+      if (moved || seq !== AUDIO_SEQ) return;
+      moved = true;
+      // 间隔从 260ms 收到 120ms：原来每词之间空得太久，听感像“最后一个慢半拍”
+      setTimeout(step, 120);
+    };
+    sayWordIn(u, w, 0.8, next);
+    setTimeout(next, Math.max(700, w.length * 120 + 400));
+  };
+  step();
+}
+
+/* ================= P06 家长周报 ================= */
+/* 实测记录里的关卡 key（u01_w1_0）翻成人话 */
+function measKeyText(key) {
+  const m = String(key || '').match(/^u(\d{2})_w(\d)(?:_(\d+))?/);
+  if (!m) return String(key || '');
+  const w = +m[2], di = m[3] == null ? 0 : +m[3];
+  const day = DAYS[di] ? DAYS[di].name : '第 ' + (di + 1) + ' 天';
+  return `${+m[1]} 号营地 · 第 ${w} 周 · ${day}`;
+}
+
+function viewReport(wrap) {
+  const c = ctxToday();
+  const uk = unitKey(c.u);
+  const wkDays = DAYS.filter(d => S.stars[`${uk}_w${c.wi}_${d.k}`]);
+  const todayDone = S.stars[`${uk}_w${c.wi}_${c.dk}`];
+  const panel = el('div', 'panel rpWrap');
+  panel.appendChild(el('div', 'h1', '本周家长报告'));
+  panel.appendChild(el('div', 'mut', `第 ${c.w} 周 · ${c.u} 号营地${c.wi !== c.w ? ` 本单元第 ${c.wi} 周` : ''} · ${c.now}`));
+
+  const card1 = el('div', 'rpCard');
+  card1.innerHTML = `<div class="h2">一、这周来了几天</div>
+    <div class="kv"><b>${Math.min(wkDays.length, 3)} / 3</b><span>${wkDays.length >= 3 ? '已达标（3 天）' : '还差 ' + (3 - wkDays.length) + ' 天达标'}</span>
+    <b>${S.stickers.length}</b><span>累计贴纸</span>
+    <b>${S.badges.length}</b><span>累计徽章</span></div>`;
+  panel.appendChild(card1);
+
+  // 说出来的词
+  const spoken = [];
+  const uk2 = uk;
+  for (let wi = 1; wi <= 4; wi++) {
+    arrayOfWeek(c.u, wi).forEach(w => { const m = mGet(idOf(c.u, w)); if (m >= 70) spoken.push(w); });
+  }
+  const card2 = el('div', 'rpCard');
+  card2.innerHTML = `<div class="h2">二、已经练熟（70 分以上）的词</div>
+    <div class="mut" style="margin-top:6px">${spoken.length ? spoken.slice(0, 14).join(' · ') : '还没有到 70 分的词，先把这周 9 个词练到 40 分以上'}</div>
+    <div class="mut" style="margin-top:4px">本周词档位（只在家长报告里显示分数）：${arrayOfWeek(c.u, c.wi).map(w => `${w} ${mGet(idOf(c.u, w))}`).join(' · ')}</div>`;
+  panel.appendChild(card2);
+
+  // 下周
+  // 把“没练过”和“练过但分低”分开说：0 分不是弱，是还没开始
+  const wkWords = arrayOfWeek(c.u, c.wi).slice().sort((a, b) => mGet(idOf(c.u, a)) - mGet(idOf(c.u, b)));
+  const notStart = wkWords.filter(w => mGet(idOf(c.u, w)) < 1).slice(0, 3);
+  const weakTrue = wkWords.filter(w => { const m = mGet(idOf(c.u, w)); return m >= 1 && m < 70; }).slice(0, 3);
+  const card3 = el('div', 'rpCard');
+  card3.innerHTML = `<div class="h2">三、接下来重点</div>
+    <div class="kv"><b>${weakTrue.length ? '需要加强的' : '还没开始的'}</b><span>${(weakTrue.length ? weakTrue : notStart).join(' · ') || '这周的词都练过了'}</span>
+    ${weakTrue.length && notStart.length ? `<b>还没开始的</b><span>${notStart.join(' · ')}</span>` : ''}
+    <b>躲着的小鸭</b><span>${S.echo.length} 个词</span>
+    <b>单元掌握度</b><span>${unitMastery(c.u)} / 100</span></div>`;
+  if (!weakTrue.length) card3.appendChild(el('div', 'mut', '0 分代表“还没练”，不代表孩子弱，别当成缺点说给孩子听。'));
+  panel.appendChild(card3);
+
+  // 实测记录
+  const meas = (S.meas || []).slice(-7).reverse();
+  const card3b = el('div', 'rpCard');
+  const avgIndep = meas.length ? Math.round(meas.reduce((a, b) => a + (b.indep || 0), 0) / meas.length) : 0;
+  const avgMins = meas.length ? (meas.reduce((a, b) => a + (b.mins || 0), 0) / meas.length).toFixed(1) : '0';
+  card3b.innerHTML = `<div class="h2">四、实测记录（最近 ${meas.length} 局）</div>
+    <div class="kv"><b>平均独立完成率</b><span>${avgIndep}%</span>
+    <b>平均专注时长</b><span>${avgMins} 分钟</span>
+    <b>今天</b><span>${meas.length ? (meas[0].away ? '中途切走 ' + meas[0].away + ' 次' : '全程没切走') : '还没记录'}</span></div>`;
+  if (meas.length) {
+    const tb = el('table', 'measTbl');
+    tb.innerHTML = `<thead><tr><th>日期</th><th>关卡</th><th>首次读对</th><th>独立率</th><th>时长</th><th>离开</th></tr></thead>
+      <tbody>${meas.map(m => `<tr><td>${m.ts.slice(5)}</td><td>${m.drill ? '复习清单' : measKeyText(m.key)}</td><td>${m.a != null ? '<b>' + m.a + '</b>/' + m.nq : (m.stars == null ? '练习' : m.stars + ' 星')}</td><td>${m.indep}%</td><td>${m.mins}′</td><td>${m.away || 0}</td></tr>`).join('')}</tbody>`;
+    card3b.appendChild(tb);
+    card3b.appendChild(el('div', 'mut', '「离开」＝答题中切到别的 App 或熄屏的次数，只做观察，不扣分。'));
+  }
+  panel.appendChild(card3b);
+
+  // 节点
+  const cards = el('div', 'rpCard');
+  cards.innerHTML = `<div class="h2">五、两个及格线节点</div>
+    <div class="kv"><b>第 4 周末</b><span>跟着手指能听出句子里有哪几个词；简单挖空能填名词；同一模板能换词</span>
+    <b>第 8 周末</b><span>给一个句型框能自己换词造句；生活里偶尔主动蹦出模板片段</span></div>`;
+  panel.appendChild(cards);
+  wrap.appendChild(panel);
+}
+
+/* ================= P07 设置 ================= */
+function viewSetting(wrap) {
+  const c = ctxToday();
+  const panel = el('div', 'panel', );
+  panel.style.width = 'min(900px,92vw)'; panel.style.padding = '3vh 2.4vw'; panel.style.display = 'flex'; panel.style.flexDirection = 'column'; panel.style.gap = '1.6vh';
+  panel.appendChild(el('div', 'h1', '家长设置'));
+  panel.appendChild(el('div', 'mut', `今天：第 ${c.w} 周 · ${c.u} 号营地${c.wi !== c.w ? ` · 本单元第 ${c.wi} 周` : ''} · ${c.dk} ${c.hol ? '（本周停课）' : ''}`));
+  const row1 = el('div', 'row');
+  row1.innerHTML = `<span class="mut">开学日：</span>`;
+  const inp = el('input'); inp.type = 'date'; inp.value = S.start;
+  inp.style.cssText = 'font-family:inherit;font-size:16px;padding:.5em .8em;border-radius:12px;border:2px solid #E7D6BE;background:#fff';
+  inp.onchange = () => { S.start = inp.value; save(); render(); };
+  row1.appendChild(inp);
+  panel.appendChild(row1);
+
+  const row2 = el('div', 'row');
+  const bSkip = el('button', 'btn sm ghost', '把本周标为停课');
+  bSkip.onclick = () => { if (!S.holidays.includes(c.w)) { S.holidays.push(c.w); save(); alert('已标为停课，本周不出新关。'); render(); } };
+  const bReset = el('button', 'btn sm danger', '清空所有进度');
+  bReset.onclick = () => { if (confirm('会删掉全部星星、贴纸、徽章、见习章、果冻图鉴、营火等级、救鸭记录和掌握度。确定？')) { localStorage.removeItem(KEY); S = defState(); save(); go('camp'); } };
+  const bDrill = el('button', 'btn sm', '勾选复习清单');
+  bDrill.onclick = () => openDrillPicker(c.u);
+  const bClrMeas = el('button', 'btn sm ghost', '清空实测记录');
+  bClrMeas.onclick = () => { if (confirm('只删「实测记录」这几行，星星和掌握度都不动。')) { S.meas = []; save(); alert('已清空实测记录。'); render(); } };
+  row2.appendChild(bSkip); row2.appendChild(bDrill); row2.appendChild(bClrMeas);
+  panel.appendChild(row2);
+
+  // 跟斑马课表对齐
+  panel.appendChild(el('div', 'h2', '跟课表对齐（防止跑到新课前面）'));
+  const rowP = el('div', 'row');
+  const lab = el('label', 'mut');
+  lab.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:16px';
+  const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!S.onlyLearned;
+  cb.onchange = () => { S.onlyLearned = cb.checked; save(); render(); };
+  const cbTxt = el('span', '', '只出已经学过的词');
+  lab.appendChild(cb); lab.appendChild(cbTxt);
+  rowP.appendChild(lab);
+  const sel = el('select');
+  sel.style.cssText = 'font-family:inherit;font-size:15px;padding:.45em .7em;border-radius:12px;border:2px solid #E7D6BE;background:#fff';
+  [['0', '游戏进度＝课表（0 周）'], ['1', '游戏落后课表 1 周'], ['2', '游戏落后课表 2 周']].forEach(([v, t]) => {
+    const o = el('option', '', t); o.value = v;
+    if (String(S.lag || 0) === v) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.onchange = () => { S.lag = parseInt(sel.value, 10) || 0; save(); render(); };
+  rowP.appendChild(sel);
+  rowP.appendChild(el('div', 'chip', `目前允许到第 ${learnedWeek()} 周`));
+  panel.appendChild(rowP);
+  panel.appendChild(el('div', 'mut', '斑马某周停课没上，就把它标成停课；如果课表整体比游戏慢，选「落后 1 周」，游戏就只用更早的词。'));
+
+  // 流畅模式：老平板/手机开这个，画面少一点效果，但点按和翻页更跟手
+  panel.appendChild(el('div', 'h2', '流畅模式'));
+  const rowL = el('div', 'row');
+  const labL = el('label', 'mut');
+  labL.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:16px';
+  const cbL = el('input'); cbL.type = 'checkbox';
+  const autoLite = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 3;
+  cbL.checked = S.lite == null ? autoLite : !!S.lite;
+  cbL.onchange = () => { S.lite = cbL.checked; save(); applyLite(); };
+  labL.appendChild(cbL); labL.appendChild(el('span', '', '开启流畅模式'));
+  rowL.appendChild(labL);
+  rowL.appendChild(el('div', 'mut', '去掉大阴影和小动画，低配设备点起来更跟手。如果还是卡，关掉再试。'));
+  panel.appendChild(rowL);
+
+  // 备份：导出 / 导入
+  panel.appendChild(el('div', 'h2', '备份（防止清缓存后从 0 开始）'));
+  const rowB = el('div', 'row');
+  const bExp = el('button', 'btn sm', '导出备份');
+  bExp.onclick = () => {
+    const blob = new Blob([JSON.stringify(S)], { type: 'application/json' });
+    const a = el('a'); a.href = URL.createObjectURL(blob);
+    a.download = `斑马S3备份_${todayStr()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    S.lastBackup = todayStr(); save(); render();
+  };
+  const bImp = el('button', 'btn sm ghost', '导入备份');
+  const fi = el('input'); fi.type = 'file'; fi.accept = '.json,application/json'; fi.style.display = 'none';
+  fi.onchange = () => {
+    const f = fi.files && fi.files[0];
+    if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const o = JSON.parse(fr.result);
+        if (!o || !o.mastery || !o.start) throw new Error('bad');
+        S = Object.assign(defState(), o); save();
+        alert('导入成功：星星、词卡掌握度、贴纸、错题都回来了。');
+        render();
+      } catch (e) { alert('这个文件不是本游戏的备份，没动你的数据。'); }
+    };
+    fr.readAsText(f);
+  };
+  bImp.onclick = () => fi.click();
+  rowB.appendChild(bExp); rowB.appendChild(bImp); rowB.appendChild(fi);
+  panel.appendChild(rowB);
+  const lastB = S.lastBackup ? `最近备份：${S.lastBackup}` : '还没备份过，建议现在导一次';
+  const warn = S.lastBackup && daysBetween(S.lastBackup, todayStr()) > 7 ? '（超过 7 天了，再导一次吧）' : '';
+  panel.appendChild(el('div', 'mut', lastB + warn));
+
+  const bCode = el('button', 'btn sm ghost', '备份码（复制/粘贴）');
+  bCode.onclick = () => openBackupCode();
+  panel.appendChild(bCode);
+
+  // 手动跳关
+  panel.appendChild(el('div', 'h2', '手动指定进度'));
+  const row3 = el('div', 'row');
+  for (let u = 1; u <= 12; u++) {
+    const b = el('div', 'uChip' + (u === c.u ? ' sel' : ''), 'U' + u);
+    b.onclick = () => { S.start = addDays(todayStr(), -(u - 1) * 28 - (c.wi - 1) * 7 - 7 * countHolBefore(u)); save(); render(); };
+    row3.appendChild(b);
+  }
+  row3.style.flexWrap = 'wrap';
+  panel.appendChild(el('div', 'mut', '点一个单元，把「今天」对齐到该单元第 1 周（会改动开学日，不改历史成绩）'));
+  panel.appendChild(row3);
+
+  const row4 = el('div', 'row');
+  const bRpt = el('button', 'btn sm', '看家长周报'); bRpt.onclick = () => go('report');
+  const bEcho = el('button', 'btn sm ghost', '回声页'); bEcho.onclick = () => go('echo');
+  row4.appendChild(bRpt); row4.appendChild(bEcho);
+  panel.appendChild(row4);
+  // 危险区：单独下沉，红按钮，别和日常操作混在一起
+  const danger = el('div', 'dangerZone');
+  danger.appendChild(el('div', 'h2', '危险区（会删数据，平时不用碰）'));
+  danger.appendChild(el('div', 'mut', '清空后星星、贴纸、徽章、见习章、果冻图鉴、营火等级、救鸭记录、掌握度、实测记录全部归零，建议先导出备份。'));
+  danger.appendChild(bReset);
+  panel.appendChild(danger);
+  // 小屏/横屏时整页可滚动，给底部固定导航留出空间，否则最后一行按钮会被盖住
+  panel.style.maxHeight = '92vh'; panel.style.overflowY = 'auto'; panel.style.paddingBottom = '14vh';
+  wrap.appendChild(panel);
+}
+function countHolBefore(u) { return S.holidays.filter(h => h < 4 * (u - 1)).length; }
+
+/* ================= 启动 ================= */
+load(); migrate(); initVoice(); bindQuizKeys(); trackAway(); decay(todayStr());
+applyLite();
+VIEW = 'camp';
+render();
+warmBgs();   // 空闲时把 9 张背景预热完，换页不再每张等一分钟
+
+</script>
+</body>
+</html>
