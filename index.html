@@ -293,6 +293,21 @@ body{
   .wrap{overflow-y:auto;justify-content:flex-start;padding-top:calc(8vh + env(safe-area-inset-top));padding-bottom:calc(12vh + env(safe-area-inset-bottom))}
   .panel{max-width:94vw;min-width:0}
 }
+/* 横屏平板：宽度 >1180 时原来沿用桌面“居中 + 禁止滚动”，
+   营地右侧“我的收藏”和底部按钮会掉到固定底栏下面，手指也划不动。
+   横屏统一改成可滚动 + 底部留出底栏高度。 */
+@media (orientation:landscape) and (max-height:980px){
+  .wrap{overflow-y:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;
+    padding-top:calc(9vh + env(safe-area-inset-top));
+    padding-bottom:calc(16vh + env(safe-area-inset-bottom))}
+  .campGrid{max-height:none;align-content:start}
+  .dueCard{overflow:visible}
+  .panel{max-height:none}
+  .rpWrap{max-height:none;overflow:visible;flex-shrink:0}
+  /* 右侧四张卡在横屏里整体压扁一点，让“我的收藏”在首屏就露出底栏上方 */
+  .campGrid > .col{gap:.9vh}
+  .campGrid > .col > .panel{padding:1.3vh 1.4vw !important}
+}
 @media (max-height:520px){
   .cardGrid{max-height:48vh}
   .panel{padding:2vh 3vw}
@@ -448,7 +463,7 @@ function shuffle(arr, seed) { const a = arr.slice(); for (let i = a.length - 1; 
 /* ================= 存档 ================= */
 const KEY = 'zmS3_camp_v1';
 function defState() {
-  return { v: 1, start: '2026-11-02', holidays: [14, 15, 26, 48], stars: {}, mastery: {}, echo: [], stickers: [], badges: [], stamps: {}, intern: false, fire: 0, jelly: [], rescued: 0, tour: false, sentGuide: false, lite: null, lastOpen: '', lastBackup: '', logs: [], meas: [], drill: null, onlyLearned: true, lag: 0, sight: [] };
+  return { v: 1, start: '2026-11-02', holidays: [14, 15, 26, 48], stars: {}, mastery: {}, echo: [], stickers: [], badges: [], stamps: {}, intern: false, fire: 0, jelly: [], rescued: 0, tour: false, sentGuide: false, lite: null, lastOpen: '', lastBackup: '', logs: [], meas: [], drill: null, onlyLearned: true, lag: 0, sight: [], sentRot: {} };
 }
 let S = defState();
 function load() {
@@ -752,6 +767,14 @@ function initVoice() {
   };
   pick(); speechSynthesis.onvoiceschanged = pick;
 }
+/* 系统发音兜底专用：有的手机 TTS 会把单独一个 a 念成字母名 /eɪ/，也会把 the 念成 /ðiː/。
+   这里只在“没有 mp3、退回系统发音”时把冠词换成能稳定读成弱读的说法，屏幕上的英文不动。 */
+function speechText(t) {
+  return String(t)
+    .replace(/\bthe\b/gi, 'thuh')
+    .replace(/\ba\b/g, 'uh')
+    .replace(/\ban\b/g, 'un');
+}
 function say(text, rate) {
   if (!window.speechSynthesis) return;
   try {
@@ -840,14 +863,20 @@ function sentNo(unit, gi, ei) {
 }
 function saySent(u, gi, ei, text, rate) {
   const path = `assets/audio/sent/${unitKey(u)}_s${pad2(sentNo(U(u), gi, ei))}.mp3`;
-  sayAudio(path, text, rate || 0.82);
+  sayAudio(path, speechText(text), rate || 0.82);
 }
-/* 词不在本单元词表里时退回系统发音 */
+/* 词不在本单元词表里时：先找句型常用词的小音频（the / a / it / is / can…），
+   保证和词卡是同一个声音；再没有才退回系统发音。 */
 function sayWordIn(u, w, rate, cb) {
   const unit = U(u);
   const clean = String(w).replace(/[^A-Za-z']/g, '');   // 句子里带句号/逗号，去掉再查词表，尽量用词表里的真人音
   const i = unit.words.indexOf(clean);
-  if (i < 0) { say(clean, rate); if (typeof cb === 'function') setTimeout(cb, 700); return; }
+  if (i < 0) {
+    const key = clean.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const p = `assets/audio/sentwords/${key}.mp3`;
+    sayAudio(p, speechText(clean), rate, cb);
+    return;
+  }
   sayWord(`${unitKey(u)}_${pad3(i + 1)}`, clean, rate, cb);
 }
 let AC = null;
@@ -1034,13 +1063,10 @@ function viewCamp(wrap) {
   bPv.onclick = () => go('preview', { u: c.u, wi: c.wi, dk: c.dk });
   const bSen = el('button', 'btn pink', '句型回声');
   bSen.onclick = () => go('sentence', { u: c.u, wi: c.wi });
-  row2.appendChild(bStart); row2.appendChild(bPv); row2.appendChild(bSen);
-  left2.appendChild(row2);
-  const row2b = el('div', 'row');
   const bSight = el('button', 'btn sm ghost', '认词小站（the / is / it …）');
   bSight.onclick = () => go('sight');
-  row2b.appendChild(bSight);
-  left2.appendChild(row2b);
+  row2.appendChild(bStart); row2.appendChild(bPv); row2.appendChild(bSen); row2.appendChild(bSight);
+  left2.appendChild(row2);
   const duck = el('img', 'duck campDuck'); duck.src = DUCK.idle; left2.appendChild(duck);
   grid.appendChild(left2);
 
@@ -1609,10 +1635,37 @@ function viewJelly(wrap) {
 }
 
 /* ================= P05 昨日回声 ================= */
+/* 旧版本只存了 {id,w}，没有 u；直接用 e.u.slice 会抛错，整页白掉。
+   这里按 id（u01_005）反推单元和词，坏数据丢掉，保证回声页永远能画出来。 */
+function normEcho(e) {
+  if (!e || !e.id) return null;
+  let u = e.u;
+  if (typeof u === 'string') u = parseInt(u.replace(/[^0-9]/g, ''), 10);
+  if (!u || (u < 1 || u > 12) || !U(u)) {
+    const m = String(e.id).match(/^u(\d{2})_/);
+    u = m ? parseInt(m[1], 10) : 0;
+  }
+  if (!u || u < 1 || u > 12 || !U(u)) return null;
+  const unit = U(u);
+  let w = e.w;
+  if (!w) {
+    const idx = parseInt(String(e.id).split('_')[1], 10);
+    w = unit.words[idx - 1];
+  }
+  if (!w) return null;
+  return { id: String(e.id), u: 'u' + String(u).padStart(2, '0'), w: String(w) };
+}
+function echoList() {
+  const raw = Array.isArray(S.echo) ? S.echo : [];
+  const list = raw.map(normEcho).filter(Boolean);
+  if (list.length !== raw.length) { S.echo = list; save(); }
+  return list;
+}
 function viewEcho(wrap) {
   const panel = el('div', 'panel rpWrap');
   panel.appendChild(el('div', 'h1', '把小鸭找回来'));
-  if (!S.echo.length) {
+  const list = echoList();
+  if (!list.length) {
     panel.classList.add('emptyEcho');
     const im = el('img', 'echoDuck'); im.src = DUCK.cheer; im.alt = '小鸭';
     panel.appendChild(im);
@@ -1620,14 +1673,15 @@ function viewEcho(wrap) {
     const b = el('button', 'btn', '回营地'); b.onclick = () => go('camp'); panel.appendChild(b);
     wrap.appendChild(panel); return;
   }
-  panel.appendChild(el('div', 'mut', `有 ${S.echo.length} 个词在躲着，点一个听一遍、说一遍`));
+  panel.appendChild(el('div', 'mut', `有 ${list.length} 个词在躲着，点一个听一遍、说一遍`));
   const grid = el('div', 'cardGrid');
   grid.style.gridTemplateColumns = 'repeat(6,1fr)';
   grid.style.maxHeight = '48vh';
-  S.echo.forEach(e => {
+  list.forEach(e => {
     const u = parseInt(e.u.slice(1), 10);
+    const wi = U(u).words.indexOf(e.w);
     const d = el('div', 'wc');
-    d.style.backgroundImage = `url("${IMG(unitKey(u), U(u).words.indexOf(e.w))}")`;
+    if (wi >= 0) d.style.backgroundImage = `url("${IMG(unitKey(u), wi)}")`;
     const im = el('img', 'duckLost'); im.src = DUCK.sit;
     d.appendChild(im);
     d.onclick = () => { sayWord(e.id, e.w); blip('ok'); };
@@ -1642,9 +1696,11 @@ function viewEcho(wrap) {
   wrap.appendChild(panel);
 }
 function startEchoQuiz() {
-  const list = S.echo.slice(0, 4);
-  SES = { u: parseInt(list[0].u.slice(1), 10), wi: 1, dk: 'D4', key: 'echo_' + todayStr(), qs: [], isEcho: true };
-  list.forEach(e => {
+  const list = echoList();
+  if (!list.length) { go('echo'); return; }
+  const pick = list.slice(0, 4);
+  SES = { u: parseInt(pick[0].u.slice(1), 10), wi: 1, dk: 'D4', key: 'echo_' + todayStr(), qs: [], isEcho: true };
+  pick.forEach(e => {
     const u = parseInt(e.u.slice(1), 10);
     SES.qs.push({ t: 'T3', word: e.w, id: e.id, echoUnit: u });
   });
@@ -2092,7 +2148,17 @@ function viewSentence(wrap) {
     return;
   }
   const nSent = unit.sentences.length;
-  const gidx = P.gi == null ? (wi - 1) % nSent : Math.max(0, Math.min(nSent - 1, P.gi));
+  /* 每次从营地进句型回声，自动换到下一组；上一组/下一组按钮仍按 P.gi 精确跳。
+     旧逻辑按“周数”定组，同一周反复进去永远是同一组。 */
+  if (!S.sentRot) S.sentRot = {};
+  let gidx;
+  if (P.gi == null) {
+    const last = Number(S.sentRot[u]);
+    gidx = Number.isFinite(last) ? (last + 1) % nSent : (wi - 1) % nSent;
+  } else {
+    gidx = Math.max(0, Math.min(nSent - 1, P.gi));
+  }
+  S.sentRot[u] = gidx; save();
   const s = unit.sentences[gidx];
   const sent = s.ex[0].replace(/—/g, ' ').replace(/\s+/g, ' ').trim();
   const words = sentTokens(sent);
@@ -2191,18 +2257,21 @@ function viewSentence(wrap) {
     // 只给“同句型其它例句里真实出现过的说法”，书上的原句，保证语义通顺；
     // 不再从整个单元随便抽词，避免 It has girl 这种错句。
     const alts = align.slotText.slice(1).filter(x => x && x !== align.slotText[0]);
-    alts.forEach(ph => {
+    alts.forEach((ph, k) => {
       const t = el('div', 'pickWord', ph);
       t.onclick = () => {
         if (!slotSpan) return;
         slotSpan.textContent = ph;
         slotSpan.classList.remove('blank');
         slotSpan.classList.add('hot');
-        // 换成新句子后，用系统发音把整句读一遍（原句 mp3 对不上改过的句子）
+        // 换词后的整句也用 Jenny 同一个声音预生成了 mp3（uXX_gNN_vK），
+        // 不再交给手机系统 TTS，避免同一个词在句子里和词卡里听起来是两个人。
         const punct = (align.slots[0].match(/[.,!?]$/) || [''])[0];
         const newSent = align.toks[0].slice(0, slotStart).join(' ') + ' ' + ph + punct +
           (slotEnd < align.toks[0].length ? ' ' + align.toks[0].slice(slotEnd).join(' ') : '');
-        say(newSent.replace(/\s+([.,!?])/g, '$1'), 0.8);
+        const clean = newSent.replace(/\s+([.,!?])/g, '$1');
+        const vp = `assets/audio/sent/${unitKey(u)}_g${pad2(gidx + 1)}_v${k + 1}.mp3`;
+        sayAudio(vp, speechText(clean), 0.8);
       };
       chips.appendChild(t);
     });
